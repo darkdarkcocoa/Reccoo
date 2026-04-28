@@ -3,19 +3,7 @@
 > 🎀 **귀여운 픽셀 아트 사운드 레코더 for Windows**
 > A cute pixel-art audio recorder built on .NET 9 + WPF
 
-```
-   ┌──────────────────────────────────────────┐
-   │ ●●●  ♪   Reccoo — 귀여운 사운드 레코더  ♪  _ ▢ ✕│
-   ├──────────────────────────────────────────┤
-   │   ○ 대기 중                  WAV · 44.1k │
-   │                                          │
-   │              00 : 00 .00                 │
-   │                                          │
-   │       ▂▃▅▆▇█▇▆▅▃▂▁▂▃▅▇█▇▅▃▁              │
-   │                                          │
-   │      [● 녹음 시작]   [■ 정지]            │
-   └──────────────────────────────────────────┘
-```
+![Reccoo screenshot](assets/screenshot.png)
 
 ![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square)
 ![WPF](https://img.shields.io/badge/UI-WPF-1f6feb?style=flat-square)
