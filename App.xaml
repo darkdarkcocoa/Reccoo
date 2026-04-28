@@ -1,0 +1,409 @@
+<Application x:Class="Reccoo.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Reccoo"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+
+            <!-- ============================================================
+                 Reccoo — pastel pixel-art palette
+                 ============================================================ -->
+            <Color x:Key="InkColor">#FF4A3C5C</Color>
+            <Color x:Key="InkDarkColor">#FF3A2F4A</Color>
+            <Color x:Key="InkSoftColor">#FF7A6A8A</Color>
+
+            <Color x:Key="CreamColor">#FFF6ECD6</Color>
+            <Color x:Key="CreamDeepColor">#FFECDCB8</Color>
+            <Color x:Key="PaperColor">#FFFFF8E7</Color>
+
+            <Color x:Key="CoralColor">#FFF5A598</Color>
+            <Color x:Key="CoralDeepColor">#FFE87F6E</Color>
+            <Color x:Key="CoralSoftColor">#FFFFD6CC</Color>
+
+            <Color x:Key="MintColor">#FFB9E4C9</Color>
+            <Color x:Key="MintDeepColor">#FF87CAA4</Color>
+            <Color x:Key="MintSoftColor">#FFDCF2E4</Color>
+
+            <Color x:Key="LilacColor">#FFC9B8E8</Color>
+            <Color x:Key="LilacDeepColor">#FFA48DD0</Color>
+            <Color x:Key="LilacSoftColor">#FFE8DFF5</Color>
+
+            <Color x:Key="GoldColor">#FFFFD97A</Color>
+            <Color x:Key="GoldDeepColor">#FFE8B94A</Color>
+
+            <SolidColorBrush x:Key="InkBrush"      Color="{StaticResource InkColor}"/>
+            <SolidColorBrush x:Key="InkDarkBrush"  Color="{StaticResource InkDarkColor}"/>
+            <SolidColorBrush x:Key="InkSoftBrush"  Color="{StaticResource InkSoftColor}"/>
+            <SolidColorBrush x:Key="CreamBrush"    Color="{StaticResource CreamColor}"/>
+            <SolidColorBrush x:Key="CreamDeepBrush" Color="{StaticResource CreamDeepColor}"/>
+            <SolidColorBrush x:Key="PaperBrush"    Color="{StaticResource PaperColor}"/>
+            <SolidColorBrush x:Key="CoralBrush"    Color="{StaticResource CoralColor}"/>
+            <SolidColorBrush x:Key="CoralDeepBrush" Color="{StaticResource CoralDeepColor}"/>
+            <SolidColorBrush x:Key="CoralSoftBrush" Color="{StaticResource CoralSoftColor}"/>
+            <SolidColorBrush x:Key="MintBrush"     Color="{StaticResource MintColor}"/>
+            <SolidColorBrush x:Key="MintDeepBrush" Color="{StaticResource MintDeepColor}"/>
+            <SolidColorBrush x:Key="LilacBrush"    Color="{StaticResource LilacColor}"/>
+            <SolidColorBrush x:Key="LilacDeepBrush" Color="{StaticResource LilacDeepColor}"/>
+            <SolidColorBrush x:Key="GoldBrush"     Color="{StaticResource GoldColor}"/>
+            <SolidColorBrush x:Key="GoldDeepBrush" Color="{StaticResource GoldDeepColor}"/>
+
+            <!-- Accent = Coral (메인 강조) -->
+            <SolidColorBrush x:Key="AccentBrush"      Color="{StaticResource CoralColor}"/>
+            <SolidColorBrush x:Key="AccentDeepBrush"  Color="{StaticResource CoralDeepColor}"/>
+            <SolidColorBrush x:Key="AccentSoftBrush"  Color="{StaticResource CoralSoftColor}"/>
+
+            <!-- Pixel-art font stack — embedded TTFs (Pixelify Sans for Latin, DotGothic16 for Korean) -->
+            <FontFamily x:Key="PixelFont">pack://application:,,,/Fonts/#Pixelify Sans, pack://application:,,,/Fonts/#DotGothic16, Consolas</FontFamily>
+            <FontFamily x:Key="PixelMonoFont">pack://application:,,,/Fonts/#Pixelify Sans, Consolas, Cascadia Mono</FontFamily>
+
+            <!-- ============================================================
+                 PixelPanel — 픽셀 베벨 컨테이너
+                 외곽 ink border + 4px 아래 offset shadow
+                 ============================================================ -->
+            <Style x:Key="PixelPanel" TargetType="ContentControl">
+                <Setter Property="Background" Value="{StaticResource PaperBrush}"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ContentControl">
+                            <Grid SnapsToDevicePixels="True">
+                                <!-- offset 그림자 (Body보다 4px 아래) -->
+                                <Rectangle Fill="{StaticResource InkDarkBrush}" Margin="0,4,0,0"/>
+                                <!-- Body -->
+                                <Border Background="{TemplateBinding Background}"
+                                        BorderBrush="{StaticResource InkDarkBrush}"
+                                        BorderThickness="3"
+                                        Margin="0,0,0,4"
+                                        SnapsToDevicePixels="True">
+                                    <Grid>
+                                        <!-- top highlight -->
+                                        <Rectangle Fill="#80FFFFFF" Height="2" VerticalAlignment="Top"/>
+                                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ============================================================
+                 PixelButton — transport (record / pause / stop)
+                 IsPressed에서 3px 아래로 슬라이드, 그림자 사라짐
+                 ============================================================ -->
+            <Style x:Key="PixelButton" TargetType="Button">
+                <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource AccentDeepBrush}"/>
+                <Setter Property="Foreground" Value="{StaticResource InkDarkBrush}"/>
+                <Setter Property="FontFamily" Value="{StaticResource PixelFont}"/>
+                <Setter Property="FontSize" Value="20"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Padding" Value="20,0"/>
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Grid SnapsToDevicePixels="True">
+                                <Rectangle x:Name="PressShadow" Fill="{StaticResource InkDarkBrush}" Margin="0,3,0,0"/>
+                                <Border x:Name="PressBody"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{StaticResource InkDarkBrush}"
+                                        BorderThickness="3"
+                                        Margin="0,0,0,3"
+                                        SnapsToDevicePixels="True">
+                                    <Grid>
+                                        <!-- top highlight stripe -->
+                                        <Rectangle Fill="#80FFFFFF" Height="3" VerticalAlignment="Top"/>
+                                        <!-- bottom deep stripe -->
+                                        <Rectangle x:Name="DeepStripe"
+                                                   Fill="{TemplateBinding BorderBrush}"
+                                                   Height="3"
+                                                   VerticalAlignment="Bottom"/>
+                                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                          Margin="{TemplateBinding Padding}"/>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="PressShadow" Property="Visibility" Value="Hidden"/>
+                                    <Setter TargetName="PressBody" Property="Margin" Value="0,3,0,0"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.5"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- 작은 픽셀 버튼 (cassette 행의 play / delete) -->
+            <Style x:Key="PixelIconButton" TargetType="Button" BasedOn="{StaticResource PixelButton}">
+                <Setter Property="Width" Value="32"/>
+                <Setter Property="Height" Value="32"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="Background" Value="{StaticResource PaperBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource InkSoftBrush}"/>
+            </Style>
+
+            <!-- ============================================================
+                 TitleBarButton — 작은 윈도우 컨트롤 (_, ▢, ✕)
+                 ============================================================ -->
+            <Style x:Key="TitleBarButton" TargetType="Button">
+                <Setter Property="Background" Value="{StaticResource PaperBrush}"/>
+                <Setter Property="Foreground" Value="{StaticResource InkDarkBrush}"/>
+                <Setter Property="FontFamily" Value="{StaticResource PixelFont}"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Width" Value="26"/>
+                <Setter Property="Height" Value="22"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="bd"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{StaticResource InkDarkBrush}"
+                                    BorderThickness="2"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentSoftBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="TitleCloseButton" TargetType="Button" BasedOn="{StaticResource TitleBarButton}">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="bd"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{StaticResource InkDarkBrush}"
+                                    BorderThickness="2"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="bd" Property="Background" Value="{StaticResource CoralDeepBrush}"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ============================================================
+                 FormatToggle — WAV / MP3 (RadioButton)
+                 ============================================================ -->
+            <Style x:Key="FormatToggle" TargetType="RadioButton">
+                <Setter Property="Background" Value="{StaticResource PaperBrush}"/>
+                <Setter Property="Foreground" Value="{StaticResource InkDarkBrush}"/>
+                <Setter Property="FontFamily" Value="{StaticResource PixelFont}"/>
+                <Setter Property="FontSize" Value="15"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Height" Value="38"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="RadioButton">
+                            <Border x:Name="bd"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{StaticResource InkDarkBrush}"
+                                    BorderThickness="2"
+                                    SnapsToDevicePixels="True">
+                                <Grid>
+                                    <Rectangle x:Name="hl" Fill="#80FFFFFF" Height="2" VerticalAlignment="Top"/>
+                                    <Rectangle x:Name="ds" Fill="Transparent" Height="3" VerticalAlignment="Bottom"/>
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="bd" Property="Background" Value="{StaticResource LilacBrush}"/>
+                                    <Setter TargetName="ds" Property="Fill" Value="{StaticResource LilacDeepBrush}"/>
+                                </Trigger>
+                                <MultiTrigger>
+                                    <MultiTrigger.Conditions>
+                                        <Condition Property="IsMouseOver" Value="True"/>
+                                        <Condition Property="IsChecked" Value="False"/>
+                                    </MultiTrigger.Conditions>
+                                    <Setter TargetName="bd" Property="Background" Value="{StaticResource CreamBrush}"/>
+                                </MultiTrigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.5"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ============================================================
+                 PixelComboBox — device picker
+                 ============================================================ -->
+            <ControlTemplate x:Key="PixelComboBoxToggle" TargetType="ToggleButton">
+                <Border x:Name="bd"
+                        Background="{StaticResource PaperBrush}"
+                        BorderBrush="{StaticResource InkDarkBrush}"
+                        BorderThickness="2"
+                        SnapsToDevicePixels="True">
+                    <Grid>
+                        <Rectangle Fill="#80FFFFFF" Height="2" VerticalAlignment="Top"/>
+                    </Grid>
+                </Border>
+            </ControlTemplate>
+
+            <Style x:Key="PixelComboBox" TargetType="ComboBox">
+                <Setter Property="Background" Value="{StaticResource PaperBrush}"/>
+                <Setter Property="Foreground" Value="{StaticResource InkDarkBrush}"/>
+                <Setter Property="FontFamily" Value="{StaticResource PixelFont}"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="Padding" Value="12,0"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ComboBox">
+                            <Grid>
+                                <ToggleButton x:Name="DropDownToggle"
+                                              Focusable="False"
+                                              ClickMode="Press"
+                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                              Template="{StaticResource PixelComboBoxToggle}"/>
+                                <Grid IsHitTestVisible="False">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ContentPresenter Grid.Column="0"
+                                                      Margin="{TemplateBinding Padding}"
+                                                      Content="{TemplateBinding SelectionBoxItem}"
+                                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                      VerticalAlignment="Center"
+                                                      HorizontalAlignment="Left"/>
+                                    <Path Grid.Column="1"
+                                          Margin="0,0,12,0"
+                                          VerticalAlignment="Center"
+                                          Data="M 0 0 L 4 4 L 8 0 Z"
+                                          Fill="{StaticResource InkDarkBrush}"/>
+                                </Grid>
+                                <Popup x:Name="PART_Popup"
+                                       AllowsTransparency="True"
+                                       IsOpen="{TemplateBinding IsDropDownOpen}"
+                                       Placement="Bottom"
+                                       PopupAnimation="None">
+                                    <Border Background="{StaticResource PaperBrush}"
+                                            BorderBrush="{StaticResource InkDarkBrush}"
+                                            BorderThickness="2"
+                                            MinWidth="{TemplateBinding ActualWidth}"
+                                            Margin="0,4,0,0"
+                                            SnapsToDevicePixels="True">
+                                        <ScrollViewer MaxHeight="220">
+                                            <StackPanel IsItemsHost="True"/>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="ItemContainerStyle">
+                    <Setter.Value>
+                        <Style TargetType="ComboBoxItem">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="Foreground" Value="{StaticResource InkDarkBrush}"/>
+                            <Setter Property="FontFamily" Value="{StaticResource PixelFont}"/>
+                            <Setter Property="FontSize" Value="13"/>
+                            <Setter Property="Padding" Value="12,8"/>
+                            <Setter Property="Cursor" Value="Hand"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ComboBoxItem">
+                                        <Border x:Name="bd"
+                                                Background="{TemplateBinding Background}"
+                                                Padding="{TemplateBinding Padding}"
+                                                SnapsToDevicePixels="True">
+                                            <ContentPresenter/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsHighlighted" Value="True">
+                                                <Setter TargetName="bd" Property="Background" Value="{StaticResource CreamDeepBrush}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="bd" Property="Background" Value="{StaticResource CreamBrush}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ============================================================
+                 ScrollBar — minimal pixel-style for recordings list
+                 ============================================================ -->
+            <Style x:Key="PixelScrollThumb" TargetType="Thumb">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Thumb">
+                            <Border Background="{StaticResource InkSoftBrush}"
+                                    BorderBrush="{StaticResource InkDarkBrush}"
+                                    BorderThickness="2"
+                                    SnapsToDevicePixels="True"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style TargetType="ScrollBar">
+                <Setter Property="Width" Value="14"/>
+                <Setter Property="Background" Value="{StaticResource CreamBrush}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ScrollBar">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{StaticResource InkDarkBrush}"
+                                    BorderThickness="2,0,0,0"
+                                    SnapsToDevicePixels="True">
+                                <Track Name="PART_Track" IsDirectionReversed="True">
+                                    <Track.Thumb>
+                                        <Thumb Style="{StaticResource PixelScrollThumb}" Margin="2"/>
+                                    </Track.Thumb>
+                                </Track>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
