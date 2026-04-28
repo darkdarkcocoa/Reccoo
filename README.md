@@ -9,6 +9,17 @@
 ![WPF](https://img.shields.io/badge/UI-WPF-1f6feb?style=flat-square)
 ![Windows](https://img.shields.io/badge/OS-Windows-0078D4?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-success?style=flat-square)
+[![Latest release](https://img.shields.io/github/v/release/darkdarkcocoa/Reccoo?style=flat-square&color=f5a598)](https://github.com/darkdarkcocoa/Reccoo/releases/latest)
+
+---
+
+## ⬇️ 다운로드 (그냥 받아서 바로 실행하기)
+
+> **[📦 Reccoo.exe 받기 (Windows x64, ~76 MB)](https://github.com/darkdarkcocoa/Reccoo/releases/latest/download/Reccoo.exe)**
+>
+> .NET 런타임이 통째로 들어있는 single-file 실행파일이라 **별도 설치 없이 더블클릭만 하면 실행돼**. SmartScreen이 경고를 띄우면 "추가 정보" → "실행" 누르면 됨.
+
+전체 릴리스 노트는 [Releases 페이지](https://github.com/darkdarkcocoa/Reccoo/releases)에서.
 
 ---
 
@@ -25,7 +36,7 @@
 
 ---
 
-## 🛠️ 빌드 & 실행
+## 🛠️ 직접 빌드하고 싶다면
 
 **필수**: [.NET 9 SDK](https://dotnet.microsoft.com/download), Windows 10/11
 
