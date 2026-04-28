@@ -6,8 +6,8 @@
         xmlns:local="clr-namespace:Reccoo"
         mc:Ignorable="d"
         Title="Reccoo"
-        Width="1216" Height="736"
-        MinWidth="1080" MinHeight="640"
+        Width="1216" Height="820"
+        MinWidth="1080" MinHeight="720"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -93,9 +93,9 @@
                             <ColumnDefinition Width="360"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="18"/>
-                            <RowDefinition Height="240"/>
+                            <RowDefinition Height="*" MinHeight="180"/>
                         </Grid.RowDefinitions>
 
                         <!-- ====================================================
@@ -248,7 +248,7 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="14"/>
-                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="200"/>
                             </Grid.RowDefinitions>
 
                             <!-- Settings panel -->
