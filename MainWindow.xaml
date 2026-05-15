@@ -74,7 +74,9 @@
                                    FontSize="16"
                                    FontWeight="Bold"
                                    HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"/>
+                                   VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis"
+                                   Margin="20,0"/>
 
                         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
                             <Button Style="{StaticResource TitleBarButton}" Content="_" Click="Minimize_Click" Margin="0,0,6,0"/>
@@ -130,7 +132,12 @@
                                                 BorderBrush="{StaticResource InkDarkBrush}"
                                                 BorderThickness="2"
                                                 VerticalAlignment="Center"
-                                                Margin="0,0,12,0"/>
+                                                Margin="0,0,12,0"
+                                                RenderTransformOrigin="0.5,0.5">
+                                            <Border.RenderTransform>
+                                                <ScaleTransform x:Name="StatusDotScale" ScaleX="1" ScaleY="1"/>
+                                            </Border.RenderTransform>
+                                        </Border>
                                         <TextBlock Grid.Column="1"
                                                    x:Name="StatusLabel"
                                                    Text="○ 대기 중"
@@ -460,21 +467,29 @@
                                                 <TranslateTransform x:Name="MascotBob" Y="0"/>
                                             </Canvas.RenderTransform>
                                         </Canvas>
-                                        <!-- speech bubble -->
-                                        <Border Grid.Column="1"
-                                                Background="{StaticResource PaperBrush}"
-                                                BorderBrush="{StaticResource InkDarkBrush}"
-                                                BorderThickness="2"
-                                                Padding="10,8"
-                                                VerticalAlignment="Center"
-                                                SnapsToDevicePixels="True">
-                                            <TextBlock x:Name="MascotSpeech"
-                                                       Text="안녕! 오늘은&#x0a;뭘 녹음할까?"
-                                                       FontSize="13"
-                                                       Foreground="{StaticResource InkDarkBrush}"
-                                                       TextWrapping="Wrap"
-                                                       LineHeight="18"/>
-                                        </Border>
+                                        <!-- speech bubble (tail + bubble) -->
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Polygon Points="0,8 8,0 8,16"
+                                                     Fill="{StaticResource PaperBrush}"
+                                                     Stroke="{StaticResource InkDarkBrush}"
+                                                     StrokeThickness="2"
+                                                     VerticalAlignment="Center"
+                                                     Margin="0,0,-2,0"
+                                                     SnapsToDevicePixels="True"/>
+                                            <Border Background="{StaticResource PaperBrush}"
+                                                    BorderBrush="{StaticResource InkDarkBrush}"
+                                                    BorderThickness="2"
+                                                    Padding="10,8"
+                                                    VerticalAlignment="Center"
+                                                    SnapsToDevicePixels="True">
+                                                <TextBlock x:Name="MascotSpeech"
+                                                           Text="안녕! 오늘은&#x0a;뭘 녹음할까?"
+                                                           FontSize="13"
+                                                           Foreground="{StaticResource InkDarkBrush}"
+                                                           TextWrapping="Wrap"
+                                                           LineHeight="18"/>
+                                            </Border>
+                                        </StackPanel>
                                     </Grid>
                                 </Grid>
                             </ContentControl>
@@ -701,14 +716,48 @@
                                 </ScrollViewer>
 
                                 <!-- Empty state -->
-                                <TextBlock Grid.Row="1"
-                                           x:Name="EmptyStateText"
-                                           Text="아직 녹음이 없어요. 위 버튼을 눌러 시작!"
-                                           FontSize="13"
-                                           Foreground="{StaticResource InkSoftBrush}"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           Visibility="Visible"/>
+                                <StackPanel Grid.Row="1"
+                                            x:Name="EmptyStateText"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Visibility="Visible">
+                                    <!-- pixel empty cassette -->
+                                    <Border Width="96" Height="64"
+                                            Background="{StaticResource CreamDeepBrush}"
+                                            BorderBrush="{StaticResource InkSoftBrush}"
+                                            BorderThickness="3"
+                                            HorizontalAlignment="Center"
+                                            SnapsToDevicePixels="True"
+                                            Opacity="0.7">
+                                        <Grid>
+                                            <Border Background="{StaticResource PaperBrush}"
+                                                    Width="72" Height="28"
+                                                    VerticalAlignment="Center"
+                                                    BorderBrush="{StaticResource InkSoftBrush}"
+                                                    BorderThickness="2"
+                                                    SnapsToDevicePixels="True"/>
+                                            <StackPanel Orientation="Horizontal"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center">
+                                                <Ellipse Width="10" Height="10"
+                                                         Fill="{StaticResource InkSoftBrush}"
+                                                         Margin="0,0,16,0"/>
+                                                <Ellipse Width="10" Height="10"
+                                                         Fill="{StaticResource InkSoftBrush}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                    <TextBlock Text="아직 녹음이 없어요."
+                                               FontSize="13"
+                                               Foreground="{StaticResource InkSoftBrush}"
+                                               HorizontalAlignment="Center"
+                                               Margin="0,12,0,2"/>
+                                    <TextBlock Text="Space를 눌러 시작!"
+                                               FontSize="11"
+                                               Foreground="{StaticResource InkSoftBrush}"
+                                               HorizontalAlignment="Center"
+                                               Opacity="0.7"/>
+                                </StackPanel>
                             </Grid>
                         </ContentControl>
 

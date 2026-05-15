@@ -633,6 +633,11 @@ public partial class MainWindow : Window
         }
         MascotBob.Y = MascotBob.Y * 0.7 + _mascotBobTarget * 0.3;
 
+        // Status dot pumps when actively recording.
+        double pumpTarget = active ? 1.0 + 0.18 * Math.Abs(Math.Sin(now / 220.0)) : 1.0;
+        StatusDotScale.ScaleX = StatusDotScale.ScaleX * 0.7 + pumpTarget * 0.3;
+        StatusDotScale.ScaleY = StatusDotScale.ScaleX;
+
         // Periodically rotate idle chatter (~ every 18s) so the mascot feels alive.
         if (!_recorder.IsRecording && _countdownTimer == null)
         {
