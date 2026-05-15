@@ -544,7 +544,11 @@
                                                         BorderThickness="2"
                                                         Padding="10"
                                                         Margin="6"
-                                                        SnapsToDevicePixels="True">
+                                                        SnapsToDevicePixels="True"
+                                                        MouseLeftButtonDown="Card_MouseLeftButtonDown"
+                                                        MouseLeftButtonUp="Card_MouseLeftButtonUp"
+                                                        MouseMove="Card_MouseMove"
+                                                        ToolTip="더블클릭으로 이름 변경 · 끌어서 내보내기">
                                                     <Grid>
                                                         <Grid.RowDefinitions>
                                                             <RowDefinition Height="Auto"/>
@@ -582,11 +586,48 @@
                                                             </Grid>
                                                         </Border>
                                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                            <TextBlock Text="{Binding Name}"
-                                                                       FontSize="14"
-                                                                       FontWeight="Bold"
-                                                                       Foreground="{StaticResource InkDarkBrush}"
-                                                                       TextTrimming="CharacterEllipsis"/>
+                                                            <Grid MouseLeftButtonDown="RecordingName_DoubleClick">
+                                                                <TextBlock x:Name="NameLabel"
+                                                                           Text="{Binding Name}"
+                                                                           FontSize="14"
+                                                                           FontWeight="Bold"
+                                                                           Foreground="{StaticResource InkDarkBrush}"
+                                                                           TextTrimming="CharacterEllipsis">
+                                                                    <TextBlock.Style>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding IsRenaming}" Value="True">
+                                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </TextBlock.Style>
+                                                                </TextBlock>
+                                                                <TextBox x:Name="NameEdit"
+                                                                         Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                                                         FontSize="14"
+                                                                         FontWeight="Bold"
+                                                                         Foreground="{StaticResource InkDarkBrush}"
+                                                                         Background="{StaticResource PaperBrush}"
+                                                                         BorderBrush="{StaticResource InkDarkBrush}"
+                                                                         BorderThickness="2"
+                                                                         Padding="4,2"
+                                                                         Visibility="Collapsed"
+                                                                         KeyDown="RenameBox_KeyDown"
+                                                                         LostKeyboardFocus="RenameBox_LostFocus"
+                                                                         Loaded="RenameBox_Loaded"
+                                                                         IsVisibleChanged="RenameBox_VisibleChanged">
+                                                                    <TextBox.Style>
+                                                                        <Style TargetType="TextBox">
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding IsRenaming}" Value="True">
+                                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </TextBox.Style>
+                                                                </TextBox>
+                                                            </Grid>
                                                             <TextBlock Text="{Binding Meta}"
                                                                        FontSize="11"
                                                                        Foreground="{StaticResource InkSoftBrush}"

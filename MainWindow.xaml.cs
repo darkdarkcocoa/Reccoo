@@ -629,6 +629,149 @@ public partial class MainWindow : Window
         return $"{t.Minutes}:{t.Seconds:D2}";
     }
 
+    // =================== Rename + drag export ===================
+    private string? _renameOriginal;
+    private Point _dragStart;
+    private RecordingItem? _dragCandidate;
+
+    private void RecordingName_DoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount != 2) return;
+        if (sender is FrameworkElement fe && fe.DataContext is RecordingItem item)
+        {
+            _renameOriginal = item.Name;
+            item.IsRenaming = true;
+            e.Handled = true;
+        }
+    }
+
+    private void RenameBox_Loaded(object sender, RoutedEventArgs e)
+    {
+        FocusRenameBox(sender as TextBox);
+    }
+
+    private void RenameBox_VisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (sender is TextBox tb && tb.IsVisible) FocusRenameBox(tb);
+    }
+
+    private static void FocusRenameBox(TextBox? tb)
+    {
+        if (tb == null) return;
+        // Defer to give WPF time to attach the visual.
+        tb.Dispatcher.BeginInvoke(new Action(() =>
+        {
+            tb.Focus();
+            Keyboard.Focus(tb);
+            int dot = tb.Text.LastIndexOf('.');
+            if (dot > 0) tb.Select(0, dot);
+            else tb.SelectAll();
+        }), DispatcherPriority.Input);
+    }
+
+    private void RenameBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (sender is not TextBox tb || tb.DataContext is not RecordingItem item) return;
+        if (e.Key == Key.Escape)
+        {
+            item.Name = _renameOriginal ?? item.Name;
+            item.IsRenaming = false;
+            Keyboard.ClearFocus();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Enter)
+        {
+            Keyboard.ClearFocus(); // triggers LostFocus -> commit
+            e.Handled = true;
+        }
+    }
+
+    private void RenameBox_LostFocus(object sender, RoutedEventArgs e)
+    {
+        if (sender is TextBox tb && tb.DataContext is RecordingItem item && item.IsRenaming)
+        {
+            CommitRename(item);
+        }
+    }
+
+    private void CommitRename(RecordingItem item)
+    {
+        item.IsRenaming = false;
+        var trimmed = item.Name.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            item.Name = _renameOriginal ?? item.Name;
+            return;
+        }
+
+        var oldExt = IOPath.GetExtension(item.Path);
+        if (!trimmed.EndsWith(oldExt, StringComparison.OrdinalIgnoreCase))
+            trimmed += oldExt;
+
+        var dir = IOPath.GetDirectoryName(item.Path);
+        if (string.IsNullOrEmpty(dir)) return;
+        var newPath = IOPath.Combine(dir, trimmed);
+
+        if (string.Equals(newPath, item.Path, StringComparison.OrdinalIgnoreCase))
+        {
+            item.Name = trimmed; // canonicalise (extension may have changed)
+            return;
+        }
+        if (File.Exists(newPath))
+        {
+            MascotSpeech.Text = "같은 이름이\n이미 있어ㅠ";
+            item.Name = _renameOriginal ?? item.Name;
+            return;
+        }
+
+        try
+        {
+            if (_playingItem == item) StopPlayback();
+            File.Move(item.Path, newPath);
+            RefreshRecordings();
+        }
+        catch (Exception ex)
+        {
+            MascotSpeech.Text = $"이름 바꾸기 실패\n{ex.Message}";
+            item.Name = _renameOriginal ?? item.Name;
+        }
+    }
+
+    private void Card_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.DataContext is RecordingItem item && !item.IsRenaming)
+        {
+            _dragStart = e.GetPosition(null);
+            _dragCandidate = item;
+        }
+    }
+
+    private void Card_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        _dragCandidate = null;
+    }
+
+    private void Card_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (_dragCandidate == null || e.LeftButton != MouseButtonState.Pressed) return;
+        var current = e.GetPosition(null);
+        var dx = current.X - _dragStart.X;
+        var dy = current.Y - _dragStart.Y;
+        if (Math.Abs(dx) < SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(dy) < SystemParameters.MinimumVerticalDragDistance) return;
+
+        var item = _dragCandidate;
+        _dragCandidate = null;
+        if (!File.Exists(item.Path)) return;
+
+        try
+        {
+            var data = new DataObject(DataFormats.FileDrop, new[] { item.Path });
+            DragDrop.DoDragDrop((DependencyObject)sender, data, DragDropEffects.Copy);
+        }
+        catch { /* ignore drag aborts */ }
+    }
+
     private static int StableHash(string s)
     {
         // String.GetHashCode is randomized per-process; this keeps the
@@ -920,7 +1063,13 @@ public class LevelCell : INotifyPropertyChanged
 
 public sealed class RecordingItem : INotifyPropertyChanged
 {
-    public required string Name { get; init; }
+    private string _name = string.Empty;
+    public required string Name
+    {
+        get => _name;
+        set { if (_name != value) { _name = value; OnChanged(); } }
+    }
+
     public required string Path { get; init; }
     public required string Meta { get; init; }
     public required Brush TapeColor { get; init; }
@@ -937,6 +1086,13 @@ public sealed class RecordingItem : INotifyPropertyChanged
     {
         get => _progress;
         set { if (Math.Abs(_progress - value) > 0.0005) { _progress = value; OnChanged(); } }
+    }
+
+    private bool _isRenaming;
+    public bool IsRenaming
+    {
+        get => _isRenaming;
+        set { if (_isRenaming != value) { _isRenaming = value; OnChanged(); } }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
