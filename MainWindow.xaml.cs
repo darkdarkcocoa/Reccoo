@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using Microsoft.VisualBasic.FileIO;
 using Microsoft.Win32;
 using NAudio.CoreAudioApi;
 using IOPath = System.IO.Path;
@@ -488,7 +489,7 @@ public partial class MainWindow : Window
                 Name = fi.Name,
                 Path = fi.FullName,
                 Meta = $"{fmt} · {dur} · {FormatBytes(fi.Length)} · {fi.LastWriteTime:M월 d일 HH:mm}",
-                TapeColor = palette[i % palette.Length]
+                TapeColor = palette[StableHash(fi.Name) % palette.Length]
             });
         }
         UpdateLibraryUi();
@@ -500,6 +501,18 @@ public partial class MainWindow : Window
         var t = d.Value;
         if (t.TotalHours >= 1) return $"{(int)t.TotalHours}:{t.Minutes:D2}:{t.Seconds:D2}";
         return $"{t.Minutes}:{t.Seconds:D2}";
+    }
+
+    private static int StableHash(string s)
+    {
+        // String.GetHashCode is randomized per-process; this keeps the
+        // tape color attached to the same filename across launches.
+        unchecked
+        {
+            int h = 5381;
+            foreach (var c in s) h = h * 33 ^ c;
+            return h & 0x7fffffff;
+        }
     }
 
     private void UpdateLibraryUi()
@@ -529,7 +542,11 @@ public partial class MainWindow : Window
     {
         if (sender is FrameworkElement fe && fe.Tag is string path && File.Exists(path))
         {
-            try { File.Delete(path); RefreshRecordings(); }
+            try
+            {
+                FileSystem.DeleteFile(path, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
+                RefreshRecordings();
+            }
             catch (Exception ex) { MascotSpeech.Text = $"삭제 실패ㅠ\n{ex.Message}"; }
         }
     }
