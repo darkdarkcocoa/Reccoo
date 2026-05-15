@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using NAudio.CoreAudioApi;
 using NAudio.Lame;
@@ -20,10 +21,11 @@ public sealed class AudioRecorder : IDisposable
     private string _tempWavPath = string.Empty;
     private string _finalPath = string.Empty;
     private RecordingFormat _format;
-    private DateTime _startedAt;
+    private readonly Stopwatch _stopwatch = new();
 
     public bool IsRecording { get; private set; }
-    public TimeSpan Elapsed => IsRecording ? DateTime.UtcNow - _startedAt : TimeSpan.Zero;
+    public bool IsPaused { get; private set; }
+    public TimeSpan Elapsed => _stopwatch.Elapsed;
 
     public event EventHandler<RecordingFinishedEventArgs>? RecordingFinished;
 
@@ -55,19 +57,37 @@ public sealed class AudioRecorder : IDisposable
         _capture.DataAvailable += OnDataAvailable;
         _capture.RecordingStopped += OnRecordingStopped;
 
-        _startedAt = DateTime.UtcNow;
+        _stopwatch.Restart();
         IsRecording = true;
+        IsPaused = false;
         _capture.StartRecording();
     }
 
     public void Stop()
     {
         if (!IsRecording) return;
+        _stopwatch.Stop();
+        IsPaused = false;
         _capture?.StopRecording();
+    }
+
+    public void Pause()
+    {
+        if (!IsRecording || IsPaused) return;
+        IsPaused = true;
+        _stopwatch.Stop();
+    }
+
+    public void Resume()
+    {
+        if (!IsRecording || !IsPaused) return;
+        IsPaused = false;
+        _stopwatch.Start();
     }
 
     private void OnDataAvailable(object? sender, WaveInEventArgs e)
     {
+        if (IsPaused) return;
         _wavWriter?.Write(e.Buffer, 0, e.BytesRecorded);
     }
 

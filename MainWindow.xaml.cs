@@ -174,6 +174,38 @@ public partial class MainWindow : Window
         _recorder.Stop();
     }
 
+    private void PauseButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_recorder.IsRecording) return;
+        if (_recorder.IsPaused) _recorder.Resume();
+        else _recorder.Pause();
+        UpdatePauseVisual();
+    }
+
+    private void UpdatePauseVisual()
+    {
+        bool paused = _recorder.IsPaused;
+        PauseIconGroup.Visibility = paused ? Visibility.Collapsed : Visibility.Visible;
+        ResumeIconGroup.Visibility = paused ? Visibility.Visible : Visibility.Collapsed;
+
+        if (paused)
+        {
+            StatusLabel.Text = "‖ 일시정지";
+            MascotSpeech.Text = "잠깐 멈췄어!\n준비되면 재개~";
+            DrawMascot(MascotMood.Paused);
+            _blinkTimer.Stop();
+            _blinkOn = true;
+        }
+        else
+        {
+            StatusLabel.Text = "● 녹음 중...";
+            MascotSpeech.Text = "♪ 다시 들어볼게!";
+            DrawMascot(MascotMood.Recording);
+            _blinkTimer.Start();
+        }
+        UpdateStatusDot();
+    }
+
     private void StartRecording()
     {
         if (DeviceCombo.SelectedItem is not MMDevice device)
@@ -228,6 +260,10 @@ public partial class MainWindow : Window
         Mp3Toggle.IsEnabled = !recording;
         RecordButton.IsEnabled = !recording;
         StopButton.IsEnabled = recording;
+        PauseButton.IsEnabled = recording;
+        PauseButton.Visibility = recording ? Visibility.Visible : Visibility.Collapsed;
+        PauseIconGroup.Visibility = Visibility.Visible;
+        ResumeIconGroup.Visibility = Visibility.Collapsed;
 
         if (recording)
         {
@@ -252,9 +288,12 @@ public partial class MainWindow : Window
     {
         if (_recorder.IsRecording)
         {
-            StatusDot.Background = _blinkOn
-                ? (Brush)FindResource("AccentDeepBrush")
-                : (Brush)FindResource("AccentSoftBrush");
+            if (_recorder.IsPaused)
+                StatusDot.Background = (Brush)FindResource("LilacDeepBrush");
+            else
+                StatusDot.Background = _blinkOn
+                    ? (Brush)FindResource("AccentDeepBrush")
+                    : (Brush)FindResource("AccentSoftBrush");
         }
         else
         {
@@ -280,7 +319,7 @@ public partial class MainWindow : Window
     // =================== Waveform / level meter ===================
     private void TickWaveform()
     {
-        bool recording = _recorder.IsRecording;
+        bool active = _recorder.IsRecording && !_recorder.IsPaused;
         var mintFill = (Brush)FindResource("MintDeepBrush");
         var goldFill = (Brush)FindResource("GoldBrush");
         var coralFill = (Brush)FindResource("AccentDeepBrush");
@@ -294,7 +333,7 @@ public partial class MainWindow : Window
         for (int i = 0; i < BarCount; i++)
         {
             double h;
-            if (recording)
+            if (active)
             {
                 double tt = tFast + i * 0.32;
                 double env = 0.55 + 0.4 * Math.Sin(tt) + 0.25 * Math.Sin(tt * 1.7) + (_rng.NextDouble() - 0.5) * 0.3;
@@ -311,7 +350,7 @@ public partial class MainWindow : Window
 
         for (int i = 0; i < LevelCellCount; i++)
         {
-            bool lit = recording && i < (8 + _rng.Next(0, 6));
+            bool lit = active && i < (8 + _rng.Next(0, 6));
             Brush color = i < 12 ? mintFill : (i < 15 ? goldFill : coralFill);
             _levelCells[i].Fill = lit ? color : emptyFill;
         }

@@ -205,9 +205,9 @@
                                             Style="{StaticResource PixelButton}"
                                             Background="{StaticResource AccentBrush}"
                                             BorderBrush="{StaticResource AccentDeepBrush}"
-                                            MinWidth="240" Height="64"
+                                            MinWidth="220" Height="64"
                                             Click="RecordButton_Click"
-                                            Margin="0,0,16,0">
+                                            Margin="0,0,12,0">
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                             <Ellipse x:Name="RecordButtonDot"
                                                      Width="20" Height="20"
@@ -221,11 +221,38 @@
                                                        FontWeight="Bold"/>
                                         </StackPanel>
                                     </Button>
+                                    <Button x:Name="PauseButton"
+                                            Style="{StaticResource PixelButton}"
+                                            Background="{StaticResource LilacBrush}"
+                                            BorderBrush="{StaticResource LilacDeepBrush}"
+                                            MinWidth="140" Height="64"
+                                            IsEnabled="False"
+                                            Visibility="Collapsed"
+                                            Click="PauseButton_Click"
+                                            Margin="0,0,12,0">
+                                        <Grid>
+                                            <StackPanel x:Name="PauseIconGroup" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
+                                                    <Border Width="5" Height="20" Background="{StaticResource InkDarkBrush}" Margin="0,0,4,0" SnapsToDevicePixels="True"/>
+                                                    <Border Width="5" Height="20" Background="{StaticResource InkDarkBrush}" SnapsToDevicePixels="True"/>
+                                                </StackPanel>
+                                                <TextBlock Text="일시정지" FontSize="18" FontWeight="Bold"/>
+                                            </StackPanel>
+                                            <StackPanel x:Name="ResumeIconGroup" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
+                                                <Path Data="M 0 0 L 12 8 L 0 16 Z"
+                                                      Fill="{StaticResource InkDarkBrush}"
+                                                      Width="12" Height="16"
+                                                      Stretch="Uniform"
+                                                      Margin="0,0,12,0"/>
+                                                <TextBlock Text="재개" FontSize="18" FontWeight="Bold"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
                                     <Button x:Name="StopButton"
                                             Style="{StaticResource PixelButton}"
                                             Background="{StaticResource PaperBrush}"
                                             BorderBrush="{StaticResource CreamDeepBrush}"
-                                            MinWidth="160" Height="64"
+                                            MinWidth="150" Height="64"
                                             IsEnabled="False"
                                             Click="StopButton_Click">
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
