@@ -174,6 +174,26 @@ public sealed class AudioRecorder : IDisposable
         reader.CopyTo(writer);
     }
 
+    public static TimeSpan? TryGetDuration(string path)
+    {
+        try
+        {
+            var ext = Path.GetExtension(path);
+            if (ext.Equals(".wav", StringComparison.OrdinalIgnoreCase))
+            {
+                using var r = new WaveFileReader(path);
+                return r.TotalTime;
+            }
+            if (ext.Equals(".mp3", StringComparison.OrdinalIgnoreCase))
+            {
+                using var r = new Mp3FileReader(path);
+                return r.TotalTime;
+            }
+        }
+        catch { /* corrupt or in-use — skip */ }
+        return null;
+    }
+
     public void Dispose()
     {
         try { _capture?.Dispose(); } catch { }

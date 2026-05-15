@@ -482,15 +482,24 @@ public partial class MainWindow : Window
         {
             var fi = files[i];
             var fmt = fi.Extension.TrimStart('.').ToUpperInvariant();
+            var dur = FormatDuration(AudioRecorder.TryGetDuration(fi.FullName));
             _recordings.Add(new RecordingItem
             {
                 Name = fi.Name,
                 Path = fi.FullName,
-                Meta = $"{fmt} · {FormatBytes(fi.Length)} · {fi.LastWriteTime:M월 d일 HH:mm}",
+                Meta = $"{fmt} · {dur} · {FormatBytes(fi.Length)} · {fi.LastWriteTime:M월 d일 HH:mm}",
                 TapeColor = palette[i % palette.Length]
             });
         }
         UpdateLibraryUi();
+    }
+
+    private static string FormatDuration(TimeSpan? d)
+    {
+        if (d == null) return "?:??";
+        var t = d.Value;
+        if (t.TotalHours >= 1) return $"{(int)t.TotalHours}:{t.Minutes:D2}:{t.Seconds:D2}";
+        return $"{t.Minutes}:{t.Seconds:D2}";
     }
 
     private void UpdateLibraryUi()
