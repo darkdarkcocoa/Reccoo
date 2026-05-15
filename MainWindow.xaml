@@ -454,7 +454,12 @@
                                                 Width="96" Height="112"
                                                 Margin="0,0,12,0"
                                                 SnapsToDevicePixels="True"
-                                                UseLayoutRounding="True"/>
+                                                UseLayoutRounding="True"
+                                                RenderTransformOrigin="0.5,1">
+                                            <Canvas.RenderTransform>
+                                                <TranslateTransform x:Name="MascotBob" Y="0"/>
+                                            </Canvas.RenderTransform>
+                                        </Canvas>
                                         <!-- speech bubble -->
                                         <Border Grid.Column="1"
                                                 Background="{StaticResource PaperBrush}"

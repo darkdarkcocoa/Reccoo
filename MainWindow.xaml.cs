@@ -39,6 +39,45 @@ public partial class MainWindow : Window
     private readonly double[] _peakHistory = new double[BarCount];
     private int _peakWriteIdx;
     private double _smoothedLevel;
+    private double _mascotBobTarget;
+
+    private static readonly string[] StartMessages =
+    {
+        "♪ 잘 들리고 있어!\n좋은 소리야~",
+        "오 이거 진짜\n좋은데?!",
+        "녹음 시작!\n맘에 들 거야 ♡",
+        "쉿... 다 듣고\n있어~",
+        "어디 누가 떠드는\n거야 ㅋㅋ",
+        "♪ 흥얼흥얼...",
+        "이거 명곡각!\n잘 잡자",
+        "딱 좋은 타이밍!",
+        "음원 수집 중...",
+        "오케이 OK!\n잘 들어가는 중",
+    };
+
+    private static readonly string[] StopMessages =
+    {
+        "잘 저장됐어!\n또 녹음할까?",
+        "굿굿! 들어보자~",
+        "이거 보관해두자!\n♡",
+        "오 좋은 소리\n잡았어 ♪",
+        "완벽! 명작!",
+        "또 듣고 싶으면\n클릭해줘",
+        "녹음 끝!\n잘 했어 ♡",
+        "와 길게 했네!\n수고했어~",
+        "이것도 추가!\n보관함이 풍성~",
+        "딱 좋은 길이!",
+    };
+
+    private static readonly string[] IdleMessages =
+    {
+        "안녕! 오늘은\n뭘 녹음할까?",
+        "또 만났네 ♡",
+        "Space 누르면\n시작!",
+        "♪ 음악 듣자~",
+        "오늘 컨디션\n좋다!",
+        "뭐 재미난 거\n있어?",
+    };
 
     public MainWindow()
     {
@@ -430,7 +469,7 @@ public partial class MainWindow : Window
                 return;
             }
 
-            MascotSpeech.Text = "잘 저장됐어!\n또 녹음할까?";
+            MascotSpeech.Text = Pick(StopMessages);
             RefreshRecordings();
         });
     }
@@ -455,7 +494,7 @@ public partial class MainWindow : Window
         {
             StatusLabel.Text = "● 녹음 중...";
             RecordButtonText.Text = "녹음 중...";
-            MascotSpeech.Text = "♪ 잘 들리고 있어!\n좋은 소리야~";
+            MascotSpeech.Text = Pick(StartMessages);
             DrawMascot(MascotMood.Recording);
         }
         else
@@ -511,6 +550,10 @@ public partial class MainWindow : Window
             if (peak > _peakAccumulator) _peakAccumulator = peak;
         }
     }
+
+    private string Pick(string[] pool) => pool[_rng.Next(pool.Length)];
+
+    private int _idleSpeechTick;
 
     private void TickWaveform()
     {
@@ -573,6 +616,36 @@ public partial class MainWindow : Window
             bool lit = i < litCount;
             Brush color = i < 12 ? mintFill : (i < 15 ? goldFill : coralFill);
             _levelCells[i].Fill = lit ? color : emptyFill;
+        }
+
+        // Mascot bob — react to audio while recording, gentle breathing while idle.
+        if (active)
+        {
+            _mascotBobTarget = -Math.Min(7.0, _smoothedLevel * 9.0);
+        }
+        else if (_recorder.IsRecording && _recorder.IsPaused)
+        {
+            _mascotBobTarget = 0;
+        }
+        else
+        {
+            _mascotBobTarget = Math.Sin(now / 900.0) * 1.8;
+        }
+        MascotBob.Y = MascotBob.Y * 0.7 + _mascotBobTarget * 0.3;
+
+        // Periodically rotate idle chatter (~ every 18s) so the mascot feels alive.
+        if (!_recorder.IsRecording && _countdownTimer == null)
+        {
+            _idleSpeechTick++;
+            if (_idleSpeechTick >= 300) // 300 * 60ms ≈ 18s
+            {
+                _idleSpeechTick = 0;
+                MascotSpeech.Text = Pick(IdleMessages);
+            }
+        }
+        else
+        {
+            _idleSpeechTick = 0;
         }
     }
 
