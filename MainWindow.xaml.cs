@@ -75,6 +75,7 @@ public partial class MainWindow : Window
 
         Loaded += OnLoaded;
         Closing += OnClosing;
+        PreviewKeyDown += OnPreviewKeyDown;
         Closed += (_, _) =>
         {
             _waveformTimer.Stop();
@@ -82,6 +83,60 @@ public partial class MainWindow : Window
             _blinkTimer.Stop();
             _recorder.Dispose();
         };
+    }
+
+    private void OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        // Don't hijack typing inside text inputs (renames, future search box, etc.)
+        if (Keyboard.FocusedElement is TextBox) return;
+
+        bool ctrl = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+
+        switch (e.Key)
+        {
+            case Key.Space:
+                if (_recorder.IsRecording)
+                {
+                    StopButton_Click(this, new RoutedEventArgs());
+                }
+                else if (RecordButton.IsEnabled)
+                {
+                    RecordButton_Click(this, new RoutedEventArgs());
+                }
+                e.Handled = true;
+                break;
+
+            case Key.P:
+                if (_recorder.IsRecording)
+                {
+                    PauseButton_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                }
+                break;
+
+            case Key.O when ctrl:
+                OpenSaveFolder();
+                e.Handled = true;
+                break;
+
+            case Key.F5:
+                RefreshRecordings();
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private void OpenSaveFolder()
+    {
+        try
+        {
+            if (Directory.Exists(_saveFolder))
+                Process.Start(new ProcessStartInfo(_saveFolder) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            MascotSpeech.Text = $"폴더 열기 실패ㅠ\n{ex.Message}";
+        }
     }
 
     private bool _closeAfterStop;
