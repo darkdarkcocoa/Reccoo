@@ -28,6 +28,7 @@ public sealed class AudioRecorder : IDisposable
     public TimeSpan Elapsed => _stopwatch.Elapsed;
 
     public event EventHandler<RecordingFinishedEventArgs>? RecordingFinished;
+    public event EventHandler<float>? LevelChanged;
 
     public static List<MMDevice> GetRenderDevices()
     {
@@ -89,6 +90,39 @@ public sealed class AudioRecorder : IDisposable
     {
         if (IsPaused) return;
         _wavWriter?.Write(e.Buffer, 0, e.BytesRecorded);
+
+        var fmt = _capture?.WaveFormat;
+        if (fmt != null && LevelChanged != null)
+        {
+            float peak = ComputePeak(e.Buffer, e.BytesRecorded, fmt);
+            LevelChanged.Invoke(this, peak);
+        }
+    }
+
+    private static float ComputePeak(byte[] buffer, int bytes, WaveFormat fmt)
+    {
+        if (fmt.Encoding == WaveFormatEncoding.IeeeFloat && fmt.BitsPerSample == 32)
+        {
+            float peak = 0f;
+            for (int i = 0; i + 3 < bytes; i += 4)
+            {
+                float v = MathF.Abs(BitConverter.ToSingle(buffer, i));
+                if (v > peak) peak = v;
+            }
+            return Math.Min(1f, peak);
+        }
+        if (fmt.Encoding == WaveFormatEncoding.Pcm && fmt.BitsPerSample == 16)
+        {
+            int peak = 0;
+            for (int i = 0; i + 1 < bytes; i += 2)
+            {
+                int v = BitConverter.ToInt16(buffer, i);
+                int abs = v == short.MinValue ? short.MaxValue : Math.Abs(v);
+                if (abs > peak) peak = abs;
+            }
+            return peak / 32768f;
+        }
+        return 0f;
     }
 
     private void OnRecordingStopped(object? sender, StoppedEventArgs e)

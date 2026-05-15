@@ -32,6 +32,12 @@ public partial class MainWindow : Window
     private const int BarCount = 56;
     private const int LevelCellCount = 18;
 
+    private readonly object _peakLock = new();
+    private float _peakAccumulator;
+    private readonly double[] _peakHistory = new double[BarCount];
+    private int _peakWriteIdx;
+    private double _smoothedLevel;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -65,6 +71,7 @@ public partial class MainWindow : Window
         _blinkTimer.Tick += (_, _) => { _blinkOn = !_blinkOn; UpdateStatusDot(); };
 
         _recorder.RecordingFinished += OnRecordingFinished;
+        _recorder.LevelChanged += OnLevelChanged;
 
         Loaded += OnLoaded;
         Closing += OnClosing;
@@ -317,6 +324,15 @@ public partial class MainWindow : Window
     }
 
     // =================== Waveform / level meter ===================
+    private void OnLevelChanged(object? sender, float peak)
+    {
+        // Capture thread — keep this lock-light.
+        lock (_peakLock)
+        {
+            if (peak > _peakAccumulator) _peakAccumulator = peak;
+        }
+    }
+
     private void TickWaveform()
     {
         bool active = _recorder.IsRecording && !_recorder.IsPaused;
@@ -326,18 +342,42 @@ public partial class MainWindow : Window
         var emptyFill = (Brush)FindResource("CreamDeepBrush");
 
         double now = Environment.TickCount;
-        double tFast = now / 180.0;
         double tIdle = now / 420.0;
         const double maxBarHeight = 110.0;
+
+        // Pull the peak that capture thread has been accumulating since last tick.
+        double currentPeak;
+        lock (_peakLock)
+        {
+            currentPeak = _peakAccumulator;
+            _peakAccumulator = 0f;
+        }
+
+        if (active)
+        {
+            // Gentle gamma curve so quiet audio is still readable on the meter.
+            double shaped = Math.Pow(Math.Min(1.0, currentPeak), 0.55);
+            _peakHistory[_peakWriteIdx] = shaped;
+            _peakWriteIdx = (_peakWriteIdx + 1) % BarCount;
+
+            // smooth current level for the cell meter (attack fast, release slow)
+            double target = shaped;
+            if (target > _smoothedLevel) _smoothedLevel = target;
+            else _smoothedLevel = _smoothedLevel * 0.78 + target * 0.22;
+        }
+        else
+        {
+            _smoothedLevel *= 0.6;
+        }
 
         for (int i = 0; i < BarCount; i++)
         {
             double h;
             if (active)
             {
-                double tt = tFast + i * 0.32;
-                double env = 0.55 + 0.4 * Math.Sin(tt) + 0.25 * Math.Sin(tt * 1.7) + (_rng.NextDouble() - 0.5) * 0.3;
-                h = Math.Max(0.08, Math.Min(1.0, env));
+                int idx = (_peakWriteIdx + i) % BarCount;
+                double p = _peakHistory[idx];
+                h = Math.Max(0.04, Math.Min(1.0, p));
             }
             else
             {
@@ -348,9 +388,10 @@ public partial class MainWindow : Window
             _bars[i].Fill = h < 0.4 ? mintFill : (h < 0.75 ? goldFill : coralFill);
         }
 
+        int litCount = (int)Math.Round(_smoothedLevel * LevelCellCount);
         for (int i = 0; i < LevelCellCount; i++)
         {
-            bool lit = active && i < (8 + _rng.Next(0, 6));
+            bool lit = i < litCount;
             Brush color = i < 12 ? mintFill : (i < 15 ? goldFill : coralFill);
             _levelCells[i].Fill = lit ? color : emptyFill;
         }
