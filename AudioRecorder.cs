@@ -48,7 +48,7 @@ public sealed class AudioRecorder : IDisposable
 
         _format = format;
         _finalPath = finalPath;
-        _tempWavPath = Path.Combine(Path.GetTempPath(), $"recsound_{Guid.NewGuid():N}.wav");
+        _tempWavPath = Path.Combine(Path.GetTempPath(), $"reccoo_{Guid.NewGuid():N}.wav");
 
         _capture = new WasapiLoopbackCapture(device);
         _wavWriter = new WaveFileWriter(_tempWavPath, _capture.WaveFormat);
@@ -124,5 +124,6 @@ public sealed class AudioRecorder : IDisposable
     {
         try { _capture?.Dispose(); } catch { }
         try { _wavWriter?.Dispose(); } catch { }
+        try { if (!string.IsNullOrEmpty(_tempWavPath) && File.Exists(_tempWavPath)) File.Delete(_tempWavPath); } catch { }
     }
 }

@@ -67,6 +67,7 @@ public partial class MainWindow : Window
         _recorder.RecordingFinished += OnRecordingFinished;
 
         Loaded += OnLoaded;
+        Closing += OnClosing;
         Closed += (_, _) =>
         {
             _waveformTimer.Stop();
@@ -74,6 +75,23 @@ public partial class MainWindow : Window
             _blinkTimer.Stop();
             _recorder.Dispose();
         };
+    }
+
+    private bool _closeAfterStop;
+    private void OnClosing(object? sender, CancelEventArgs e)
+    {
+        if (!_recorder.IsRecording || _closeAfterStop) return;
+        e.Cancel = true;
+        _closeAfterStop = true;
+        MascotSpeech.Text = "마무리 중...\n잠깐만!";
+        EventHandler<RecordingFinishedEventArgs>? handler = null;
+        handler = (_, _) =>
+        {
+            _recorder.RecordingFinished -= handler;
+            Dispatcher.BeginInvoke(new Action(Close));
+        };
+        _recorder.RecordingFinished += handler;
+        _recorder.Stop();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -152,7 +170,6 @@ public partial class MainWindow : Window
     private void StopButton_Click(object sender, RoutedEventArgs e)
     {
         if (!_recorder.IsRecording) return;
-        _uiTimer.Stop();
         MascotSpeech.Text = "저장 중...\n잠깐만!";
         _recorder.Stop();
     }
@@ -225,6 +242,7 @@ public partial class MainWindow : Window
             RecordButtonText.Text = "녹음 시작";
             DrawMascot(MascotMood.Idle);
             _blinkTimer.Stop();
+            _uiTimer.Stop();
             _blinkOn = true;
         }
         UpdateStatusDot();
