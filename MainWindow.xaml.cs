@@ -233,6 +233,60 @@ public partial class MainWindow : Window
     private void Maximize_Click(object sender, RoutedEventArgs e) => ToggleMaximize();
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
 
+    private bool _darkMode;
+    private void ThemeButton_Click(object sender, RoutedEventArgs e)
+    {
+        _darkMode = !_darkMode;
+        ApplyTheme(_darkMode);
+        ThemeButton.Content = _darkMode ? "☀" : "☾";
+    }
+
+    private static void Recolor(string key, string hex)
+    {
+        if (Application.Current.Resources[key] is SolidColorBrush b)
+        {
+            var c = (Color)ColorConverter.ConvertFromString(hex);
+            if (!b.IsFrozen) b.Color = c;
+            else Application.Current.Resources[key] = new SolidColorBrush(c);
+        }
+    }
+
+    private static void ApplyTheme(bool dark)
+    {
+        if (dark)
+        {
+            Recolor("InkColor",        "#FFE8DCEF"); // (not directly referenced by brushes, kept symmetric)
+            Recolor("InkDarkColor",    "#FFF6ECFA");
+            Recolor("InkSoftColor",    "#FFB4A8C8");
+            Recolor("CreamColor",      "#FF2C2440");
+            Recolor("CreamDeepColor",  "#FF1F1830");
+            Recolor("PaperColor",      "#FF3A2F4A");
+
+            Recolor("InkBrush",        "#FFE8DCEF");
+            Recolor("InkDarkBrush",    "#FFF6ECFA");
+            Recolor("InkSoftBrush",    "#FFB4A8C8");
+            Recolor("CreamBrush",      "#FF2C2440");
+            Recolor("CreamDeepBrush",  "#FF1F1830");
+            Recolor("PaperBrush",      "#FF3A2F4A");
+        }
+        else
+        {
+            Recolor("InkColor",        "#FF4A3C5C");
+            Recolor("InkDarkColor",    "#FF3A2F4A");
+            Recolor("InkSoftColor",    "#FF7A6A8A");
+            Recolor("CreamColor",      "#FFF6ECD6");
+            Recolor("CreamDeepColor",  "#FFECDCB8");
+            Recolor("PaperColor",      "#FFFFF8E7");
+
+            Recolor("InkBrush",        "#FF4A3C5C");
+            Recolor("InkDarkBrush",    "#FF3A2F4A");
+            Recolor("InkSoftBrush",    "#FF7A6A8A");
+            Recolor("CreamBrush",      "#FFF6ECD6");
+            Recolor("CreamDeepBrush",  "#FFECDCB8");
+            Recolor("PaperBrush",      "#FFFFF8E7");
+        }
+    }
+
     private void ToggleMaximize()
     {
         WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;

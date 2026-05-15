@@ -79,6 +79,7 @@
                                    Margin="20,0"/>
 
                         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                            <Button x:Name="ThemeButton" Style="{StaticResource TitleBarButton}" Content="☾" Click="ThemeButton_Click" Margin="0,0,6,0" ToolTip="테마 전환"/>
                             <Button Style="{StaticResource TitleBarButton}" Content="_" Click="Minimize_Click" Margin="0,0,6,0"/>
                             <Button Style="{StaticResource TitleBarButton}" Content="▢" Click="Maximize_Click" Margin="0,0,6,0"/>
                             <Button Style="{StaticResource TitleCloseButton}" Content="✕" Click="Close_Click"/>
