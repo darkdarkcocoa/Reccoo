@@ -96,7 +96,11 @@ public partial class MainWindow : Window
         switch (e.Key)
         {
             case Key.Space:
-                if (_recorder.IsRecording)
+                if (_countdownTimer != null)
+                {
+                    StopButton_Click(this, new RoutedEventArgs());
+                }
+                else if (_recorder.IsRecording)
                 {
                     StopButton_Click(this, new RoutedEventArgs());
                 }
@@ -232,6 +236,12 @@ public partial class MainWindow : Window
 
     private void StopButton_Click(object sender, RoutedEventArgs e)
     {
+        if (_countdownTimer != null)
+        {
+            CancelCountdownIfRunning();
+            MascotSpeech.Text = "취소했어!\n다시 누르면 시작~";
+            return;
+        }
         if (!_recorder.IsRecording) return;
         MascotSpeech.Text = "저장 중...\n잠깐만!";
         _recorder.Stop();
@@ -269,10 +279,83 @@ public partial class MainWindow : Window
         UpdateStatusDot();
     }
 
+    private DispatcherTimer? _countdownTimer;
+    private int _countdownValue;
+
     private void StartRecording()
+    {
+        if (DeviceCombo.SelectedItem is null)
+        {
+            MascotSpeech.Text = "장치를 먼저\n선택해줘!";
+            return;
+        }
+        BeginCountdown(3);
+    }
+
+    private void BeginCountdown(int from)
+    {
+        _countdownValue = from;
+        DeviceCombo.IsEnabled = false;
+        WavToggle.IsEnabled = false;
+        Mp3Toggle.IsEnabled = false;
+        RecordButton.IsEnabled = false;
+        StopButton.IsEnabled = true; // Lets the user cancel mid-count via the stop button or Space.
+        PauseButton.Visibility = Visibility.Collapsed;
+
+        ApplyCountdownVisual();
+
+        _countdownTimer?.Stop();
+        _countdownTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(900) };
+        _countdownTimer.Tick += CountdownTick;
+        _countdownTimer.Start();
+    }
+
+    private void CountdownTick(object? sender, EventArgs e)
+    {
+        _countdownValue--;
+        if (_countdownValue <= 0)
+        {
+            _countdownTimer?.Stop();
+            _countdownTimer = null;
+            EndCountdownVisual();
+            ActuallyStartRecording();
+        }
+        else
+        {
+            ApplyCountdownVisual();
+        }
+    }
+
+    private void ApplyCountdownVisual()
+    {
+        TimerMin.Text = _countdownValue.ToString();
+        TimerSec.Visibility = Visibility.Collapsed;
+        TimerColon.Visibility = Visibility.Collapsed;
+        TimerCs.Visibility = Visibility.Collapsed;
+        StatusLabel.Text = "♪ 곧 시작...";
+        MascotSpeech.Text = _countdownValue switch
+        {
+            3 => "셋!",
+            2 => "둘!",
+            1 => "하나!",
+            _ => "..."
+        };
+    }
+
+    private void EndCountdownVisual()
+    {
+        TimerSec.Visibility = Visibility.Visible;
+        TimerColon.Visibility = Visibility.Visible;
+        TimerCs.Visibility = Visibility.Visible;
+        ResetTimerLabels();
+    }
+
+    private void ActuallyStartRecording()
     {
         if (DeviceCombo.SelectedItem is not MMDevice device)
         {
+            // Re-enable controls and bail.
+            SetRecordingVisual(false);
             MascotSpeech.Text = "장치를 먼저\n선택해줘!";
             return;
         }
@@ -288,6 +371,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
+            SetRecordingVisual(false);
             MascotSpeech.Text = $"시작 실패ㅠ\n{ex.Message}";
             return;
         }
@@ -295,6 +379,17 @@ public partial class MainWindow : Window
         SetRecordingVisual(true);
         _uiTimer.Start();
         _blinkTimer.Start();
+    }
+
+    private void CancelCountdownIfRunning()
+    {
+        if (_countdownTimer != null)
+        {
+            _countdownTimer.Stop();
+            _countdownTimer = null;
+            EndCountdownVisual();
+            SetRecordingVisual(false);
+        }
     }
 
     private void OnRecordingFinished(object? sender, RecordingFinishedEventArgs e)

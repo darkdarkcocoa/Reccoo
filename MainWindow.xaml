@@ -155,7 +155,7 @@
                                                Foreground="{StaticResource InkDarkBrush}"
                                                LineHeight="84"
                                                TextOptions.TextFormattingMode="Ideal"/>
-                                    <TextBlock Text=":"
+                                    <TextBlock x:Name="TimerColon" Text=":"
                                                FontFamily="{StaticResource PixelMonoFont}"
                                                FontWeight="Bold" FontSize="64"
                                                Foreground="{StaticResource AccentDeepBrush}"
