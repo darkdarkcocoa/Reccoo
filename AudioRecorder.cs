@@ -88,10 +88,17 @@ public sealed class AudioRecorder : IDisposable
         _stopwatch.Start();
     }
 
+    private const int TransientSkipMs = 100;
+
     private void OnDataAvailable(object? sender, WaveInEventArgs e)
     {
         if (IsPaused) return;
-        _wavWriter?.Write(e.Buffer, 0, e.BytesRecorded);
+
+        // Skip ~100ms of WASAPI startup so the click from StartRecording does not get baked in.
+        if (_stopwatch.ElapsedMilliseconds >= TransientSkipMs)
+        {
+            _wavWriter?.Write(e.Buffer, 0, e.BytesRecorded);
+        }
 
         var fmt = _capture?.WaveFormat;
         if (fmt != null && LevelChanged != null)
