@@ -6,6 +6,8 @@
     <Application.Resources>
         <ResourceDictionary>
 
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
             <!-- ============================================================
                  Reccoo — pastel pixel-art palette
                  ============================================================ -->

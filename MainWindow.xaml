@@ -510,6 +510,11 @@
                                                         Margin="6"
                                                         SnapsToDevicePixels="True">
                                                     <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                        </Grid.RowDefinitions>
+                                                        <Grid Grid.Row="0">
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="Auto"/>
                                                             <ColumnDefinition Width="*"/>
@@ -551,17 +556,25 @@
                                                                        Foreground="{StaticResource InkSoftBrush}"
                                                                        Margin="0,2,0,0"/>
                                                         </StackPanel>
-                                                        <Button Grid.Column="2"
+                                                        <Button x:Name="PlayBtn"
+                                                                Grid.Column="2"
                                                                 Style="{StaticResource PixelIconButton}"
                                                                 Background="{StaticResource AccentBrush}"
                                                                 BorderBrush="{StaticResource AccentDeepBrush}"
                                                                 Tag="{Binding Path}"
                                                                 Click="PlayRecording_Click"
                                                                 Margin="6,0">
-                                                            <Path Data="M 0 0 L 8 6 L 0 12 Z"
-                                                                  Fill="{StaticResource InkDarkBrush}"
-                                                                  Width="8" Height="12"
-                                                                  Stretch="Uniform"/>
+                                                            <Grid>
+                                                                <Path x:Name="PlayGlyph"
+                                                                      Data="M 0 0 L 8 6 L 0 12 Z"
+                                                                      Fill="{StaticResource InkDarkBrush}"
+                                                                      Width="8" Height="12"
+                                                                      Stretch="Uniform"/>
+                                                                <StackPanel x:Name="PauseGlyph" Orientation="Horizontal" Visibility="Collapsed">
+                                                                    <Border Width="3" Height="12" Background="{StaticResource InkDarkBrush}" Margin="0,0,2,0" SnapsToDevicePixels="True"/>
+                                                                    <Border Width="3" Height="12" Background="{StaticResource InkDarkBrush}" SnapsToDevicePixels="True"/>
+                                                                </StackPanel>
+                                                            </Grid>
                                                         </Button>
                                                         <Button Grid.Column="3"
                                                                 Style="{StaticResource PixelIconButton}"
@@ -572,8 +585,34 @@
                                                                        FontWeight="Bold"
                                                                        Foreground="{StaticResource InkSoftBrush}"/>
                                                         </Button>
+                                                        </Grid>
+                                                        <!-- Progress bar (visible only while this item is playing) -->
+                                                        <Border Grid.Row="1"
+                                                                Height="8"
+                                                                Margin="0,8,0,0"
+                                                                Background="{StaticResource CreamBrush}"
+                                                                BorderBrush="{StaticResource InkDarkBrush}"
+                                                                BorderThickness="2"
+                                                                ClipToBounds="True"
+                                                                Visibility="{Binding IsPlaying, Converter={StaticResource BoolToVis}}"
+                                                                SnapsToDevicePixels="True">
+                                                            <Border Background="{StaticResource MintDeepBrush}"
+                                                                    HorizontalAlignment="Stretch"
+                                                                    RenderTransformOrigin="0,0"
+                                                                    SnapsToDevicePixels="True">
+                                                                <Border.RenderTransform>
+                                                                    <ScaleTransform ScaleX="{Binding Progress}"/>
+                                                                </Border.RenderTransform>
+                                                            </Border>
+                                                        </Border>
                                                     </Grid>
                                                 </Border>
+                                                <DataTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                        <Setter TargetName="PlayGlyph" Property="Visibility" Value="Collapsed"/>
+                                                        <Setter TargetName="PauseGlyph" Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </DataTemplate.Triggers>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>

@@ -11,6 +11,7 @@ using System.Windows.Threading;
 using Microsoft.VisualBasic.FileIO;
 using Microsoft.Win32;
 using NAudio.CoreAudioApi;
+using NAudio.Wave;
 using IOPath = System.IO.Path;
 using WpfRectangle = System.Windows.Shapes.Rectangle;
 
@@ -82,6 +83,7 @@ public partial class MainWindow : Window
             _waveformTimer.Stop();
             _uiTimer.Stop();
             _blinkTimer.Stop();
+            StopPlayback();
             _recorder.Dispose();
         };
     }
@@ -551,6 +553,9 @@ public partial class MainWindow : Window
     // =================== Recordings library ===================
     private void RefreshRecordings()
     {
+        // RecordingItem instances get replaced on refresh; stop playback so the
+        // player stays bound to a live item.
+        StopPlayback();
         _recordings.Clear();
         if (!Directory.Exists(_saveFolder))
         {
@@ -624,12 +629,93 @@ public partial class MainWindow : Window
         return $"{bytes / 1024.0 / 1024.0 / 1024.0:F1} GB";
     }
 
+    private WaveOutEvent? _player;
+    private AudioFileReader? _playerReader;
+    private RecordingItem? _playingItem;
+    private DispatcherTimer? _playerTimer;
+
     private void PlayRecording_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is FrameworkElement fe && fe.Tag is string path && File.Exists(path))
+        if (sender is not FrameworkElement fe || fe.Tag is not string path) return;
+        if (!File.Exists(path)) return;
+
+        var item = _recordings.FirstOrDefault(r => r.Path == path);
+        if (item == null) return;
+
+        if (_playingItem == item && _player != null)
         {
-            try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); }
-            catch (Exception ex) { MascotSpeech.Text = $"재생 실패ㅠ\n{ex.Message}"; }
+            // Same card — toggle pause/resume.
+            if (_player.PlaybackState == PlaybackState.Playing) _player.Pause();
+            else _player.Play();
+            return;
+        }
+
+        StopPlayback();
+        StartPlayback(item);
+    }
+
+    private void StartPlayback(RecordingItem item)
+    {
+        try
+        {
+            _playerReader = new AudioFileReader(item.Path);
+            _player = new WaveOutEvent();
+            _player.Init(_playerReader);
+            _player.PlaybackStopped += OnPlaybackStopped;
+            _player.Play();
+            _playingItem = item;
+            item.IsPlaying = true;
+            item.Progress = 0;
+
+            _playerTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(80) };
+            _playerTimer.Tick += UpdatePlayerProgress;
+            _playerTimer.Start();
+            MascotSpeech.Text = "재생 중!\n♪~";
+        }
+        catch (Exception ex)
+        {
+            MascotSpeech.Text = $"재생 실패ㅠ\n{ex.Message}";
+            StopPlayback();
+            // Fall back to the OS default handler so the user is not stranded.
+            try { Process.Start(new ProcessStartInfo(item.Path) { UseShellExecute = true }); } catch { }
+        }
+    }
+
+    private void UpdatePlayerProgress(object? sender, EventArgs e)
+    {
+        if (_playerReader == null || _playingItem == null) return;
+        double total = _playerReader.TotalTime.TotalSeconds;
+        if (total <= 0) return;
+        _playingItem.Progress = Math.Clamp(_playerReader.CurrentTime.TotalSeconds / total, 0, 1);
+    }
+
+    private void OnPlaybackStopped(object? sender, StoppedEventArgs e)
+    {
+        Dispatcher.BeginInvoke(new Action(StopPlayback));
+    }
+
+    private void StopPlayback()
+    {
+        _playerTimer?.Stop();
+        if (_playerTimer != null) _playerTimer.Tick -= UpdatePlayerProgress;
+        _playerTimer = null;
+
+        if (_player != null)
+        {
+            _player.PlaybackStopped -= OnPlaybackStopped;
+            try { _player.Stop(); } catch { }
+            try { _player.Dispose(); } catch { }
+            _player = null;
+        }
+
+        try { _playerReader?.Dispose(); } catch { }
+        _playerReader = null;
+
+        if (_playingItem != null)
+        {
+            _playingItem.IsPlaying = false;
+            _playingItem.Progress = 0;
+            _playingItem = null;
         }
     }
 
@@ -637,6 +723,7 @@ public partial class MainWindow : Window
     {
         if (sender is FrameworkElement fe && fe.Tag is string path && File.Exists(path))
         {
+            if (_playingItem?.Path == path) StopPlayback();
             try
             {
                 FileSystem.DeleteFile(path, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
@@ -805,10 +892,28 @@ public class LevelCell : INotifyPropertyChanged
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
-public sealed class RecordingItem
+public sealed class RecordingItem : INotifyPropertyChanged
 {
     public required string Name { get; init; }
     public required string Path { get; init; }
     public required string Meta { get; init; }
     public required Brush TapeColor { get; init; }
+
+    private bool _isPlaying;
+    public bool IsPlaying
+    {
+        get => _isPlaying;
+        set { if (_isPlaying != value) { _isPlaying = value; OnChanged(); } }
+    }
+
+    private double _progress;
+    public double Progress
+    {
+        get => _progress;
+        set { if (Math.Abs(_progress - value) > 0.0005) { _progress = value; OnChanged(); } }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private void OnChanged([CallerMemberName] string? name = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
