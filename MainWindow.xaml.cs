@@ -223,10 +223,33 @@ public partial class MainWindow : Window
         UpdateFormatInfo();
     }
 
+    private void Bitrate_Checked(object sender, RoutedEventArgs e)
+    {
+        if (!IsLoaded) return;
+        if (LoToggle.IsChecked == true) _recorder.Mp3Quality = Mp3Quality.Low;
+        else if (HiToggle.IsChecked == true) _recorder.Mp3Quality = Mp3Quality.High;
+        else _recorder.Mp3Quality = Mp3Quality.Medium;
+        UpdateFormatInfo();
+    }
+
     private void UpdateFormatInfo()
     {
-        var fmt = WavToggle.IsChecked == true ? "WAV" : "MP3";
-        FormatInfoText.Text = $"{fmt} · 시스템 사운드";
+        bool isMp3 = Mp3Toggle.IsChecked == true;
+        var fmt = isMp3 ? "MP3" : "WAV";
+        var visibility = isMp3 ? Visibility.Visible : Visibility.Collapsed;
+        BitrateLabel.Visibility = visibility;
+        BitrateGroup.Visibility = visibility;
+
+        if (isMp3)
+        {
+            string q = LoToggle.IsChecked == true ? "LO"
+                     : HiToggle.IsChecked == true ? "HI" : "MED";
+            FormatInfoText.Text = $"MP3 {q} · 시스템 사운드";
+        }
+        else
+        {
+            FormatInfoText.Text = "WAV · 시스템 사운드";
+        }
     }
 
     // =================== Transport ===================
@@ -418,6 +441,9 @@ public partial class MainWindow : Window
         DeviceCombo.IsEnabled = !recording;
         WavToggle.IsEnabled = !recording;
         Mp3Toggle.IsEnabled = !recording;
+        LoToggle.IsEnabled = !recording;
+        MedToggle.IsEnabled = !recording;
+        HiToggle.IsEnabled = !recording;
         RecordButton.IsEnabled = !recording;
         StopButton.IsEnabled = recording;
         PauseButton.IsEnabled = recording;

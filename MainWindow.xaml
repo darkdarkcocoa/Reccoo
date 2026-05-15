@@ -308,7 +308,7 @@
                                                FontSize="12"
                                                Foreground="{StaticResource InkSoftBrush}"
                                                Margin="0,0,0,6"/>
-                                    <Grid Margin="0,0,0,12">
+                                    <Grid Margin="0,0,0,8">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="*"/>
@@ -326,6 +326,42 @@
                                                      Content="MP3"
                                                      GroupName="Format"
                                                      Checked="Format_Checked"
+                                                     Margin="-2,0,0,0"/>
+                                    </Grid>
+                                    <TextBlock x:Name="BitrateLabel"
+                                               Text="↳  MP3 품질"
+                                               FontSize="11"
+                                               Foreground="{StaticResource InkSoftBrush}"
+                                               Margin="0,0,0,4"
+                                               Visibility="Collapsed"/>
+                                    <Grid x:Name="BitrateGroup"
+                                          Margin="0,0,0,12"
+                                          Visibility="Collapsed">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <RadioButton Grid.Column="0"
+                                                     x:Name="LoToggle"
+                                                     Style="{StaticResource FormatToggle}"
+                                                     Content="LO"
+                                                     GroupName="Bitrate"
+                                                     Checked="Bitrate_Checked"/>
+                                        <RadioButton Grid.Column="1"
+                                                     x:Name="MedToggle"
+                                                     Style="{StaticResource FormatToggle}"
+                                                     Content="MED"
+                                                     IsChecked="True"
+                                                     GroupName="Bitrate"
+                                                     Checked="Bitrate_Checked"
+                                                     Margin="-2,0,0,0"/>
+                                        <RadioButton Grid.Column="2"
+                                                     x:Name="HiToggle"
+                                                     Style="{StaticResource FormatToggle}"
+                                                     Content="HI"
+                                                     GroupName="Bitrate"
+                                                     Checked="Bitrate_Checked"
                                                      Margin="-2,0,0,0"/>
                                     </Grid>
 

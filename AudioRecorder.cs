@@ -7,6 +7,7 @@ using NAudio.Wave;
 namespace Reccoo;
 
 public enum RecordingFormat { Wav, Mp3 }
+public enum Mp3Quality { Low, Medium, High }
 
 public sealed class RecordingFinishedEventArgs : EventArgs
 {
@@ -26,6 +27,7 @@ public sealed class AudioRecorder : IDisposable
     public bool IsRecording { get; private set; }
     public bool IsPaused { get; private set; }
     public TimeSpan Elapsed => _stopwatch.Elapsed;
+    public Mp3Quality Mp3Quality { get; set; } = Mp3Quality.Medium;
 
     public event EventHandler<RecordingFinishedEventArgs>? RecordingFinished;
     public event EventHandler<float>? LevelChanged;
@@ -143,7 +145,7 @@ public sealed class AudioRecorder : IDisposable
             {
                 if (_format == RecordingFormat.Mp3)
                 {
-                    EncodeWavToMp3(_tempWavPath, _finalPath);
+                    EncodeWavToMp3(_tempWavPath, _finalPath, Mp3Quality);
                 }
                 else
                 {
@@ -167,10 +169,16 @@ public sealed class AudioRecorder : IDisposable
         });
     }
 
-    private static void EncodeWavToMp3(string wavPath, string mp3Path)
+    private static void EncodeWavToMp3(string wavPath, string mp3Path, Mp3Quality quality)
     {
+        var preset = quality switch
+        {
+            Mp3Quality.Low => LAMEPreset.MEDIUM,    // ~150 kbps VBR
+            Mp3Quality.High => LAMEPreset.EXTREME,  // ~245 kbps VBR
+            _ => LAMEPreset.STANDARD,               // ~190 kbps VBR
+        };
         using var reader = new WaveFileReader(wavPath);
-        using var writer = new LameMP3FileWriter(mp3Path, reader.WaveFormat, LAMEPreset.STANDARD);
+        using var writer = new LameMP3FileWriter(mp3Path, reader.WaveFormat, preset);
         reader.CopyTo(writer);
     }
 
