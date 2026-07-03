@@ -21,12 +21,12 @@ Reccoo is a small recorder that captures whatever your PC is playing. Streaming 
 
 | | 한국어 (Korean) | English |
 |---|:---:|:---:|
-| **App UI** | ✅ | — |
-| **Mascot dialogue** | ✅ | — |
+| **App UI** | ✅ | ✅ |
+| **Mascot dialogue** | ✅ | ✅ |
 | **README** | ✅ | ✅ |
 
-The app interface and mascot dialogue are currently available in **Korean only**.
-English localization is planned — contributions are very welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+Switch anytime with the **KOR | EN toggle** in the title bar. The app follows your system language on first launch.
+Interested in adding another language? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
@@ -58,6 +58,7 @@ Full changelogs are on the [Releases page](https://github.com/darkdarkcocoa/Recc
 - **Input level meter** — an 18-cell pixel meter shows the volume at a glance
 - **Mascot "Recco"** — bobs along with the audio, changes expressions with the recording state, and occasionally chats
 - **Dark theme** — switch between light and dark with a toggle in the title bar
+- **KOR | EN language toggle** — flip the whole UI (mascot chatter included) between Korean and English right from the title bar
 
 **📼 After recording**
 
