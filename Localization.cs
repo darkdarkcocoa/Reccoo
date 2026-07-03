@@ -54,7 +54,6 @@ public static class L10n
         // 타이틀바
         ["WindowTitle"]     = ("♪  Reccoo — 귀여운 사운드 레코더  ♪", "♪  Reccoo — cute sound recorder  ♪"),
         ["ThemeTooltip"]    = ("테마 전환", "Toggle theme"),
-        ["LangTooltip"]     = ("영어로 전환 (EN)", "한국어로 전환 (KOR)"),
 
         // 상태 표시
         ["StatusIdle"]      = ("○ 대기 중", "○ Standing by"),

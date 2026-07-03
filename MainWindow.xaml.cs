@@ -43,7 +43,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        UpdateLangButton();
+        UpdateLangToggle();
         L10n.LanguageChanged += OnLanguageChanged;
 
         _saveFolder = IOPath.Combine(
@@ -206,17 +206,21 @@ public partial class MainWindow : Window
     }
 
     // =================== Language toggle ===================
-    private void LangButton_Click(object sender, RoutedEventArgs e)
+    private void LangToggle_Checked(object sender, RoutedEventArgs e)
     {
-        L10n.Set(L10n.IsKorean ? AppLanguage.English : AppLanguage.Korean);
+        if (!IsLoaded) return; // 초기 IsChecked 세팅(생성자)에서는 무시
+        L10n.Set(ReferenceEquals(sender, KorToggle) ? AppLanguage.Korean : AppLanguage.English);
     }
 
-    // 테마 버튼(☾ = 누르면 다크)처럼 전환될 언어를 표시한다.
-    private void UpdateLangButton() => LangButton.Content = L10n.IsKorean ? "EN" : "KOR";
+    private void UpdateLangToggle()
+    {
+        if (L10n.IsKorean) KorToggle.IsChecked = true;
+        else EnToggle.IsChecked = true;
+    }
 
     private void OnLanguageChanged()
     {
-        UpdateLangButton();
+        UpdateLangToggle();
 
         // XAML의 DynamicResource는 자동 갱신되므로, 코드가 직접 세팅하는
         // 상태 의존 텍스트만 현재 상태에 맞춰 다시 그린다.

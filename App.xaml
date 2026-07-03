@@ -264,6 +264,12 @@
                 </Setter>
             </Style>
 
+            <!-- 타이틀바 미니 세그먼트 (KOR | EN) — FormatToggle의 축소판 -->
+            <Style x:Key="TitleLangToggle" TargetType="RadioButton" BasedOn="{StaticResource FormatToggle}">
+                <Setter Property="Height" Value="22"/>
+                <Setter Property="FontSize" Value="11"/>
+            </Style>
+
             <!-- ============================================================
                  PixelComboBox — device picker
                  ============================================================ -->
