@@ -81,7 +81,6 @@
                         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
                             <RadioButton x:Name="KorToggle" Style="{StaticResource TitleLangToggle}" Content="KOR" Width="40" GroupName="UiLang" Checked="LangToggle_Checked" ToolTip="한국어"/>
                             <RadioButton x:Name="EnToggle" Style="{StaticResource TitleLangToggle}" Content="EN" Width="34" GroupName="UiLang" Checked="LangToggle_Checked" Margin="-2,0,10,0" ToolTip="English"/>
-                            <Button x:Name="ThemeButton" Style="{StaticResource TitleBarButton}" Content="☾" Click="ThemeButton_Click" Margin="0,0,6,0" ToolTip="{DynamicResource L_ThemeTooltip}"/>
                             <Button Style="{StaticResource TitleBarButton}" Content="_" Click="Minimize_Click" Margin="0,0,6,0"/>
                             <Button Style="{StaticResource TitleBarButton}" Content="▢" Click="Maximize_Click" Margin="0,0,6,0"/>
                             <Button Style="{StaticResource TitleCloseButton}" Content="✕" Click="Close_Click"/>

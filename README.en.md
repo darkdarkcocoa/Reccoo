@@ -57,7 +57,6 @@ Full changelogs are on the [Releases page](https://github.com/darkdarkcocoa/Recc
 - **Live waveform** — the current audio dances across 56 pixel bars (mint → gold → coral gradient)
 - **Input level meter** — an 18-cell pixel meter shows the volume at a glance
 - **Mascot "Recco"** — bobs along with the audio, changes expressions with the recording state, and occasionally chats
-- **Dark theme** — switch between light and dark with a toggle in the title bar
 - **KOR | EN language toggle** — flip the whole UI (mascot chatter included) between Korean and English right from the title bar
 
 **📼 After recording**
