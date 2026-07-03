@@ -698,7 +698,7 @@ public partial class MainWindow : Window
             if (_idleSpeechTick >= 300) // 300 * 60ms ≈ 18s
             {
                 _idleSpeechTick = 0;
-                MascotSpeech.Text = Pick(IdleMessages);
+                MascotSpeech.Text = Pick(L10n.IdleMessages);
             }
         }
         else
