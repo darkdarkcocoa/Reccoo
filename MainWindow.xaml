@@ -69,7 +69,7 @@
                         </StackPanel>
 
                         <TextBlock Grid.Column="1"
-                                   Text="♪  Reccoo — 귀여운 사운드 레코더  ♪"
+                                   Text="{DynamicResource L_WindowTitle}"
                                    Foreground="{StaticResource InkDarkBrush}"
                                    FontSize="16"
                                    FontWeight="Bold"
@@ -79,7 +79,8 @@
                                    Margin="20,0"/>
 
                         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
-                            <Button x:Name="ThemeButton" Style="{StaticResource TitleBarButton}" Content="☾" Click="ThemeButton_Click" Margin="0,0,6,0" ToolTip="테마 전환"/>
+                            <Button x:Name="LangButton" Style="{StaticResource TitleBarButton}" Width="42" Content="EN" Click="LangButton_Click" Margin="0,0,10,0" ToolTip="{DynamicResource L_LangTooltip}"/>
+                            <Button x:Name="ThemeButton" Style="{StaticResource TitleBarButton}" Content="☾" Click="ThemeButton_Click" Margin="0,0,6,0" ToolTip="{DynamicResource L_ThemeTooltip}"/>
                             <Button Style="{StaticResource TitleBarButton}" Content="_" Click="Minimize_Click" Margin="0,0,6,0"/>
                             <Button Style="{StaticResource TitleBarButton}" Content="▢" Click="Maximize_Click" Margin="0,0,6,0"/>
                             <Button Style="{StaticResource TitleCloseButton}" Content="✕" Click="Close_Click"/>
@@ -141,14 +142,14 @@
                                         </Border>
                                         <TextBlock Grid.Column="1"
                                                    x:Name="StatusLabel"
-                                                   Text="○ 대기 중"
+                                                   Text="{DynamicResource L_StatusIdle}"
                                                    FontSize="16"
                                                    FontWeight="Bold"
                                                    Foreground="{StaticResource InkDarkBrush}"
                                                    VerticalAlignment="Center"/>
                                         <TextBlock Grid.Column="3"
                                                    x:Name="FormatInfoText"
-                                                   Text="WAV · 시스템 사운드"
+                                                   Text=""
                                                    FontSize="12"
                                                    Foreground="{StaticResource InkSoftBrush}"
                                                    VerticalAlignment="Center"/>
@@ -225,7 +226,7 @@
                                                      StrokeThickness="2"
                                                      Margin="0,0,12,0"/>
                                             <TextBlock x:Name="RecordButtonText"
-                                                       Text="녹음 시작"
+                                                       Text="{DynamicResource L_RecordStart}"
                                                        FontSize="20"
                                                        FontWeight="Bold"/>
                                         </StackPanel>
@@ -245,7 +246,7 @@
                                                     <Border Width="5" Height="20" Background="{StaticResource InkDarkBrush}" Margin="0,0,4,0" SnapsToDevicePixels="True"/>
                                                     <Border Width="5" Height="20" Background="{StaticResource InkDarkBrush}" SnapsToDevicePixels="True"/>
                                                 </StackPanel>
-                                                <TextBlock Text="일시정지" FontSize="18" FontWeight="Bold"/>
+                                                <TextBlock Text="{DynamicResource L_PauseBtn}" FontSize="18" FontWeight="Bold"/>
                                             </StackPanel>
                                             <StackPanel x:Name="ResumeIconGroup" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
                                                 <Path Data="M 0 0 L 12 8 L 0 16 Z"
@@ -253,7 +254,7 @@
                                                       Width="12" Height="16"
                                                       Stretch="Uniform"
                                                       Margin="0,0,12,0"/>
-                                                <TextBlock Text="재개" FontSize="18" FontWeight="Bold"/>
+                                                <TextBlock Text="{DynamicResource L_ResumeBtn}" FontSize="18" FontWeight="Bold"/>
                                             </StackPanel>
                                         </Grid>
                                     </Button>
@@ -270,11 +271,11 @@
                                                     BorderBrush="{StaticResource InkDarkBrush}"
                                                     BorderThickness="2"
                                                     Margin="0,0,12,0"/>
-                                            <TextBlock Text="정지" FontSize="20" FontWeight="Bold"/>
+                                            <TextBlock Text="{DynamicResource L_StopBtn}" FontSize="20" FontWeight="Bold"/>
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>
-                                <TextBlock Text="Space  녹음 토글   ·   P  일시정지   ·   Ctrl+O  폴더"
+                                <TextBlock Text="{DynamicResource L_ShortcutHint}"
                                            HorizontalAlignment="Center"
                                            FontSize="11"
                                            Foreground="{StaticResource InkSoftBrush}"
@@ -297,13 +298,13 @@
                             <!-- Settings panel -->
                             <ContentControl Grid.Row="0" Style="{StaticResource PixelPanel}">
                                 <StackPanel Margin="16">
-                                    <TextBlock Text="⚙  녹음 설정"
+                                    <TextBlock Text="{DynamicResource L_SettingsTitle}"
                                                FontSize="16"
                                                FontWeight="Bold"
                                                Foreground="{StaticResource InkDarkBrush}"
                                                Margin="0,0,0,12"/>
 
-                                    <TextBlock Text="🎤  입력 장치"
+                                    <TextBlock Text="{DynamicResource L_InputDevice}"
                                                FontSize="12"
                                                Foreground="{StaticResource InkSoftBrush}"
                                                Margin="0,0,0,6"/>
@@ -312,7 +313,7 @@
                                               DisplayMemberPath="FriendlyName"
                                               Margin="0,0,0,12"/>
 
-                                    <TextBlock Text="🔊  출력 포맷"
+                                    <TextBlock Text="{DynamicResource L_OutputFormat}"
                                                FontSize="12"
                                                Foreground="{StaticResource InkSoftBrush}"
                                                Margin="0,0,0,6"/>
@@ -360,7 +361,7 @@
                                         </RadioButton>
                                     </Grid>
                                     <TextBlock x:Name="BitrateLabel"
-                                               Text="↳  MP3 품질"
+                                               Text="{DynamicResource L_Mp3Quality}"
                                                FontSize="11"
                                                Foreground="{StaticResource InkSoftBrush}"
                                                Margin="0,0,0,4"
@@ -396,7 +397,7 @@
                                                      Margin="-2,0,0,0"/>
                                     </Grid>
 
-                                    <TextBlock Text="입력 레벨"
+                                    <TextBlock Text="{DynamicResource L_InputLevel}"
                                                FontSize="12"
                                                Foreground="{StaticResource InkSoftBrush}"
                                                Margin="0,0,0,6"/>
@@ -419,7 +420,7 @@
                                         </ItemsControl>
                                     </Border>
 
-                                    <TextBlock Text="저장 폴더"
+                                    <TextBlock Text="{DynamicResource L_SaveFolder}"
                                                FontSize="12"
                                                Foreground="{StaticResource InkSoftBrush}"
                                                Margin="0,12,0,6"/>
@@ -449,7 +450,7 @@
                                                 Height="34"
                                                 Padding="14,0"
                                                 FontSize="13"
-                                                Content="변경"
+                                                Content="{DynamicResource L_ChangeBtn}"
                                                 Click="ChangeFolder_Click"/>
                                     </Grid>
                                 </StackPanel>
@@ -464,7 +465,7 @@
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
                                     <Grid Grid.Row="0">
-                                        <TextBlock Text="레코 (Recco)"
+                                        <TextBlock Text="{DynamicResource L_MascotName}"
                                                    FontSize="14"
                                                    FontWeight="Bold"
                                                    Foreground="{StaticResource InkDarkBrush}"
@@ -507,7 +508,7 @@
                                                     VerticalAlignment="Center"
                                                     SnapsToDevicePixels="True">
                                                 <TextBlock x:Name="MascotSpeech"
-                                                           Text="안녕! 오늘은&#x0a;뭘 녹음할까?"
+                                                           Text="{DynamicResource L_Hello}"
                                                            FontSize="13"
                                                            Foreground="{StaticResource InkDarkBrush}"
                                                            TextWrapping="Wrap"
@@ -549,14 +550,14 @@
                                                    VerticalAlignment="Center"
                                                    Margin="0,0,8,0"/>
                                         <TextBlock Grid.Column="1"
-                                                   Text="내 녹음 보관함"
+                                                   Text="{DynamicResource L_LibraryTitle}"
                                                    FontSize="16"
                                                    FontWeight="Bold"
                                                    Foreground="{StaticResource InkDarkBrush}"
                                                    VerticalAlignment="Center"/>
                                         <TextBlock Grid.Column="2"
                                                    x:Name="RecordingCountText"
-                                                   Text=" · 0개"
+                                                   Text=""
                                                    FontSize="13"
                                                    Foreground="{StaticResource InkSoftBrush}"
                                                    VerticalAlignment="Center"/>
@@ -592,7 +593,7 @@
                                                         MouseLeftButtonDown="Card_MouseLeftButtonDown"
                                                         MouseLeftButtonUp="Card_MouseLeftButtonUp"
                                                         MouseMove="Card_MouseMove"
-                                                        ToolTip="더블클릭으로 이름 변경 · 끌어서 내보내기">
+                                                        ToolTip="{DynamicResource L_CardTooltip}">
                                                     <Grid>
                                                         <Grid.RowDefinitions>
                                                             <RowDefinition Height="Auto"/>
@@ -771,12 +772,12 @@
                                             </StackPanel>
                                         </Grid>
                                     </Border>
-                                    <TextBlock Text="아직 녹음이 없어요."
+                                    <TextBlock Text="{DynamicResource L_EmptyTitle}"
                                                FontSize="13"
                                                Foreground="{StaticResource InkSoftBrush}"
                                                HorizontalAlignment="Center"
                                                Margin="0,12,0,2"/>
-                                    <TextBlock Text="Space를 눌러 시작!"
+                                    <TextBlock Text="{DynamicResource L_EmptyHint}"
                                                FontSize="11"
                                                Foreground="{StaticResource InkSoftBrush}"
                                                HorizontalAlignment="Center"

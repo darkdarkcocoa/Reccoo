@@ -40,47 +40,11 @@ public partial class MainWindow : Window
     private double _smoothedLevel;
     private double _mascotBobTarget;
 
-    private static readonly string[] StartMessages =
-    {
-        "♪ 잘 들리고 있어!\n좋은 소리야~",
-        "오 이거 진짜\n좋은데?!",
-        "녹음 시작!\n맘에 들 거야 ♡",
-        "쉿... 다 듣고\n있어~",
-        "어디 누가 떠드는\n거야 ㅋㅋ",
-        "♪ 흥얼흥얼...",
-        "이거 명곡각!\n잘 잡자",
-        "딱 좋은 타이밍!",
-        "음원 수집 중...",
-        "오케이 OK!\n잘 들어가는 중",
-    };
-
-    private static readonly string[] StopMessages =
-    {
-        "잘 저장됐어!\n또 녹음할까?",
-        "굿굿! 들어보자~",
-        "이거 보관해두자!\n♡",
-        "오 좋은 소리\n잡았어 ♪",
-        "완벽! 명작!",
-        "또 듣고 싶으면\n클릭해줘",
-        "녹음 끝!\n잘 했어 ♡",
-        "와 길게 했네!\n수고했어~",
-        "이것도 추가!\n보관함이 풍성~",
-        "딱 좋은 길이!",
-    };
-
-    private static readonly string[] IdleMessages =
-    {
-        "안녕! 오늘은\n뭘 녹음할까?",
-        "또 만났네 ♡",
-        "Space 누르면\n시작!",
-        "♪ 음악 듣자~",
-        "오늘 컨디션\n좋다!",
-        "뭐 재미난 거\n있어?",
-    };
-
     public MainWindow()
     {
         InitializeComponent();
+        UpdateLangButton();
+        L10n.LanguageChanged += OnLanguageChanged;
 
         _saveFolder = IOPath.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
@@ -118,6 +82,7 @@ public partial class MainWindow : Window
         PreviewKeyDown += OnPreviewKeyDown;
         Closed += (_, _) =>
         {
+            L10n.LanguageChanged -= OnLanguageChanged;
             _waveformTimer.Stop();
             _uiTimer.Stop();
             _blinkTimer.Stop();
@@ -180,7 +145,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MascotSpeech.Text = $"폴더 열기 실패ㅠ\n{ex.Message}";
+            MascotSpeech.Text = $"{L10n.T("MsgFolderOpenFail")}\n{ex.Message}";
         }
     }
 
@@ -190,7 +155,7 @@ public partial class MainWindow : Window
         if (!_recorder.IsRecording || _closeAfterStop) return;
         e.Cancel = true;
         _closeAfterStop = true;
-        MascotSpeech.Text = "마무리 중...\n잠깐만!";
+        MascotSpeech.Text = L10n.T("MsgClosing");
         EventHandler<RecordingFinishedEventArgs>? handler = null;
         handler = (_, _) =>
         {
@@ -211,7 +176,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MascotSpeech.Text = $"장치 로드 실패ㅠ\n{ex.Message}";
+            MascotSpeech.Text = $"{L10n.T("MsgDeviceLoadFail")}\n{ex.Message}";
         }
 
         DrawMascot(MascotMood.Idle);
@@ -238,6 +203,41 @@ public partial class MainWindow : Window
         _darkMode = !_darkMode;
         ApplyTheme(_darkMode);
         ThemeButton.Content = _darkMode ? "☀" : "☾";
+    }
+
+    // =================== Language toggle ===================
+    private void LangButton_Click(object sender, RoutedEventArgs e)
+    {
+        L10n.Set(L10n.IsKorean ? AppLanguage.English : AppLanguage.Korean);
+    }
+
+    // 테마 버튼(☾ = 누르면 다크)처럼 전환될 언어를 표시한다.
+    private void UpdateLangButton() => LangButton.Content = L10n.IsKorean ? "EN" : "KOR";
+
+    private void OnLanguageChanged()
+    {
+        UpdateLangButton();
+
+        // XAML의 DynamicResource는 자동 갱신되므로, 코드가 직접 세팅하는
+        // 상태 의존 텍스트만 현재 상태에 맞춰 다시 그린다.
+        if (_countdownTimer != null)
+        {
+            StatusLabel.Text = L10n.T("StatusCountdown");
+        }
+        else if (_recorder.IsRecording)
+        {
+            StatusLabel.Text = _recorder.IsPaused ? L10n.T("StatusPaused") : L10n.T("StatusRecording");
+            RecordButtonText.Text = L10n.T("Recording");
+        }
+        else
+        {
+            StatusLabel.Text = L10n.T("StatusIdle");
+            RecordButtonText.Text = L10n.T("RecordStart");
+            MascotSpeech.Text = Pick(L10n.IdleMessages);
+        }
+
+        UpdateFormatInfo();
+        RefreshRecordings(); // 카드 Meta의 날짜 표기 언어 갱신
     }
 
     private static void Recolor(string key, string hex)
@@ -296,7 +296,7 @@ public partial class MainWindow : Window
     {
         var dialog = new OpenFolderDialog
         {
-            Title = "저장 폴더 선택",
+            Title = L10n.T("FolderDialogTitle"),
             InitialDirectory = _saveFolder
         };
         if (dialog.ShowDialog() == true)
@@ -336,11 +336,11 @@ public partial class MainWindow : Window
         {
             string q = LoToggle.IsChecked == true ? "LO"
                      : HiToggle.IsChecked == true ? "HI" : "MED";
-            FormatInfoText.Text = $"MP3 {q} · 시스템 사운드";
+            FormatInfoText.Text = $"MP3 {q} · {L10n.T("SystemSound")}";
         }
         else
         {
-            FormatInfoText.Text = "WAV · 시스템 사운드";
+            FormatInfoText.Text = $"WAV · {L10n.T("SystemSound")}";
         }
     }
 
@@ -356,11 +356,11 @@ public partial class MainWindow : Window
         if (_countdownTimer != null)
         {
             CancelCountdownIfRunning();
-            MascotSpeech.Text = "취소했어!\n다시 누르면 시작~";
+            MascotSpeech.Text = L10n.T("MsgCancelled");
             return;
         }
         if (!_recorder.IsRecording) return;
-        MascotSpeech.Text = "저장 중...\n잠깐만!";
+        MascotSpeech.Text = L10n.T("MsgSaving");
         _recorder.Stop();
     }
 
@@ -380,16 +380,16 @@ public partial class MainWindow : Window
 
         if (paused)
         {
-            StatusLabel.Text = "‖ 일시정지";
-            MascotSpeech.Text = "잠깐 멈췄어!\n준비되면 재개~";
+            StatusLabel.Text = L10n.T("StatusPaused");
+            MascotSpeech.Text = L10n.T("MsgPaused");
             DrawMascot(MascotMood.Paused);
             _blinkTimer.Stop();
             _blinkOn = true;
         }
         else
         {
-            StatusLabel.Text = "● 녹음 중...";
-            MascotSpeech.Text = "♪ 다시 들어볼게!";
+            StatusLabel.Text = L10n.T("StatusRecording");
+            MascotSpeech.Text = L10n.T("MsgResumed");
             DrawMascot(MascotMood.Recording);
             _blinkTimer.Start();
         }
@@ -403,7 +403,7 @@ public partial class MainWindow : Window
     {
         if (DeviceCombo.SelectedItem is null)
         {
-            MascotSpeech.Text = "장치를 먼저\n선택해줘!";
+            MascotSpeech.Text = L10n.T("MsgPickDevice");
             return;
         }
         BeginCountdown(3);
@@ -449,12 +449,12 @@ public partial class MainWindow : Window
         TimerSec.Visibility = Visibility.Collapsed;
         TimerColon.Visibility = Visibility.Collapsed;
         TimerCs.Visibility = Visibility.Collapsed;
-        StatusLabel.Text = "♪ 곧 시작...";
+        StatusLabel.Text = L10n.T("StatusCountdown");
         MascotSpeech.Text = _countdownValue switch
         {
-            3 => "셋!",
-            2 => "둘!",
-            1 => "하나!",
+            3 => L10n.T("Count3"),
+            2 => L10n.T("Count2"),
+            1 => L10n.T("Count1"),
             _ => "..."
         };
     }
@@ -473,7 +473,7 @@ public partial class MainWindow : Window
         {
             // Re-enable controls and bail.
             SetRecordingVisual(false);
-            MascotSpeech.Text = "장치를 먼저\n선택해줘!";
+            MascotSpeech.Text = L10n.T("MsgPickDevice");
             return;
         }
 
@@ -489,7 +489,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             SetRecordingVisual(false);
-            MascotSpeech.Text = $"시작 실패ㅠ\n{ex.Message}";
+            MascotSpeech.Text = $"{L10n.T("MsgStartFail")}\n{ex.Message}";
             return;
         }
 
@@ -518,11 +518,11 @@ public partial class MainWindow : Window
 
             if (e.Error != null)
             {
-                MascotSpeech.Text = $"오류ㅠ\n{e.Error.Message}";
+                MascotSpeech.Text = $"{L10n.T("MsgError")}\n{e.Error.Message}";
                 return;
             }
 
-            MascotSpeech.Text = Pick(StopMessages);
+            MascotSpeech.Text = Pick(L10n.StopMessages);
             RefreshRecordings();
         });
     }
@@ -545,15 +545,15 @@ public partial class MainWindow : Window
 
         if (recording)
         {
-            StatusLabel.Text = "● 녹음 중...";
-            RecordButtonText.Text = "녹음 중...";
-            MascotSpeech.Text = Pick(StartMessages);
+            StatusLabel.Text = L10n.T("StatusRecording");
+            RecordButtonText.Text = L10n.T("Recording");
+            MascotSpeech.Text = Pick(L10n.StartMessages);
             DrawMascot(MascotMood.Recording);
         }
         else
         {
-            StatusLabel.Text = "○ 대기 중";
-            RecordButtonText.Text = "녹음 시작";
+            StatusLabel.Text = L10n.T("StatusIdle");
+            RecordButtonText.Text = L10n.T("RecordStart");
             DrawMascot(MascotMood.Idle);
             _blinkTimer.Stop();
             _uiTimer.Stop();
@@ -745,7 +745,7 @@ public partial class MainWindow : Window
             {
                 Name = fi.Name,
                 Path = fi.FullName,
-                Meta = $"{fmt} · {dur} · {FormatBytes(fi.Length)} · {fi.LastWriteTime:M월 d일 HH:mm}",
+                Meta = $"{fmt} · {dur} · {FormatBytes(fi.Length)} · {L10n.FormatMetaDate(fi.LastWriteTime)}",
                 TapeColor = palette[StableHash(fi.Name) % palette.Length]
             });
         }
@@ -850,7 +850,7 @@ public partial class MainWindow : Window
         }
         if (File.Exists(newPath))
         {
-            MascotSpeech.Text = "같은 이름이\n이미 있어ㅠ";
+            MascotSpeech.Text = L10n.T("MsgNameExists");
             item.Name = _renameOriginal ?? item.Name;
             return;
         }
@@ -863,7 +863,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MascotSpeech.Text = $"이름 바꾸기 실패\n{ex.Message}";
+            MascotSpeech.Text = $"{L10n.T("MsgRenameFail")}\n{ex.Message}";
             item.Name = _renameOriginal ?? item.Name;
         }
     }
@@ -917,7 +917,7 @@ public partial class MainWindow : Window
 
     private void UpdateLibraryUi()
     {
-        RecordingCountText.Text = $" · {_recordings.Count}개";
+        RecordingCountText.Text = string.Format(L10n.T("CountFmt"), _recordings.Count);
         EmptyStateText.Visibility = _recordings.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -970,11 +970,11 @@ public partial class MainWindow : Window
             _playerTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(80) };
             _playerTimer.Tick += UpdatePlayerProgress;
             _playerTimer.Start();
-            MascotSpeech.Text = "재생 중!\n♪~";
+            MascotSpeech.Text = L10n.T("MsgPlaying");
         }
         catch (Exception ex)
         {
-            MascotSpeech.Text = $"재생 실패ㅠ\n{ex.Message}";
+            MascotSpeech.Text = $"{L10n.T("MsgPlayFail")}\n{ex.Message}";
             StopPlayback();
             // Fall back to the OS default handler so the user is not stranded.
             try { Process.Start(new ProcessStartInfo(item.Path) { UseShellExecute = true }); } catch { }
@@ -1029,7 +1029,7 @@ public partial class MainWindow : Window
                 FileSystem.DeleteFile(path, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
                 RefreshRecordings();
             }
-            catch (Exception ex) { MascotSpeech.Text = $"삭제 실패ㅠ\n{ex.Message}"; }
+            catch (Exception ex) { MascotSpeech.Text = $"{L10n.T("MsgDeleteFail")}\n{ex.Message}"; }
         }
     }
 
