@@ -15,7 +15,8 @@
 
 ## ⬇️ 다운로드 (그냥 받아서 바로 실행하기)
 
-> **[📦 Reccoo.exe 받기 (Windows x64, ~76 MB)](https://github.com/darkdarkcocoa/Reccoo/releases/latest/download/Reccoo.exe)**
+> **[📦 Reccoo.exe 받기 (Windows x64, ~76 MB)](https://github.com/darkdarkcocoa/Reccoo/releases/latest/download/Reccoo.exe)** — 항상 **최신 릴리스**를 받는 링크야
+> ([![최신 버전](https://img.shields.io/github/v/release/darkdarkcocoa/Reccoo?style=flat-square&label=%EC%B5%9C%EC%8B%A0%20%EB%B2%84%EC%A0%84&color=b9e4c9)](https://github.com/darkdarkcocoa/Reccoo/releases/latest) · 릴리스 시점: [![릴리스 날짜](https://img.shields.io/github/release-date/darkdarkcocoa/Reccoo?style=flat-square&label=&color=ffd97a)](https://github.com/darkdarkcocoa/Reccoo/releases/latest))
 >
 > .NET 런타임이 통째로 들어있는 single-file 실행파일이라 **별도 설치 없이 더블클릭만 하면 실행돼**. SmartScreen이 경고를 띄우면 "추가 정보" → "실행" 누르면 됨.
 
