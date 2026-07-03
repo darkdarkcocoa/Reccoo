@@ -7,8 +7,6 @@
 
 Reccoo is a small recorder that captures whatever your PC is playing. Streaming music, game audio, live broadcasts — anything coming out of your speakers can be recorded with a single click and saved as WAV or MP3. Since it records the audio signal directly (not through a microphone), recordings are clean with no background noise. And while you record, the pixel mascot "Recco" keeps you company. 🐤
 
-> **Note**: The app's UI is currently **Korean-only**. English localization is on the wish list — contributions are very welcome (see [Contributing](#-contributing)).
-
 ![Reccoo screenshot](assets/screenshot.png)
 
 ![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square)
@@ -16,6 +14,19 @@ Reccoo is a small recorder that captures whatever your PC is playing. Streaming 
 ![Windows](https://img.shields.io/badge/OS-Windows-0078D4?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-success?style=flat-square)
 [![Latest release](https://img.shields.io/github/v/release/darkdarkcocoa/Reccoo?style=flat-square&color=f5a598)](https://github.com/darkdarkcocoa/Reccoo/releases/latest)
+
+---
+
+## 🌏 Language Support
+
+| | 한국어 (Korean) | English |
+|---|:---:|:---:|
+| **App UI** | ✅ | — |
+| **Mascot dialogue** | ✅ | — |
+| **README** | ✅ | ✅ |
+
+The app interface and mascot dialogue are currently available in **Korean only**.
+English localization is planned — contributions are very welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ---
 
