@@ -69,6 +69,23 @@ Full changelogs are on the [Releases page](https://github.com/darkdarkcocoa/Recc
 
 ---
 
+## 💡 What can you record?
+
+Reccoo captures **any sound your PC plays**, so it's a handy free tool for things like:
+
+- 🎧 **Recording streaming music** — Spotify, YouTube Music, Apple Music, SoundCloud, Bandcamp
+- 📺 **Saving audio from videos** — YouTube, Twitch, Netflix and other in-browser playback
+- 🎙️ **Capturing online meetings & calls** — Discord, Zoom, Microsoft Teams, Google Meet
+- 🎮 **Grabbing game audio and voice lines**
+- 📻 **Archiving live radio, podcasts, and broadcasts**
+- 🎓 **Keeping lectures, webinars, and language-learning audio**
+
+Because it records the audio signal directly through **WASAPI loopback** (no microphone), every capture is clean and free of background noise.
+
+> ⚠️ Please respect copyright and each service's terms of use — record only content you have the right to save.
+
+---
+
 ## 🛠️ Building from source
 
 All you need is the [.NET 9 SDK](https://dotnet.microsoft.com/download) and Windows 10/11.
