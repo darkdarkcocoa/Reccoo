@@ -10,7 +10,7 @@
 마이크를 거치지 않고 오디오 신호를 직접 캡처하기 때문에 주변 잡음 없이 깨끗한 녹음이 가능합니다.
 녹음하는 동안에는 픽셀 마스코트 "레코"가 곁에서 말을 걸어 줍니다. 🐤
 
-![Reccoo 스크린샷 (한국어 UI)](assets/screenshot-ko.png)
+![Reccoo 녹음 데모 — 라이브 파형, 입력 레벨, 마스코트](assets/reccoo-demo.gif)
 
 ![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square)
 ![WPF](https://img.shields.io/badge/UI-WPF-1f6feb?style=flat-square)

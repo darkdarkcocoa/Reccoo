@@ -7,7 +7,7 @@
 
 Reccoo is a small recorder that captures whatever your PC is playing. Streaming music, game audio, live broadcasts — anything coming out of your speakers can be recorded with a single click and saved as WAV or MP3. Since it records the audio signal directly (not through a microphone), recordings are clean with no background noise. And while you record, the pixel mascot "Recco" keeps you company. 🐤
 
-![Reccoo screenshot (English UI)](assets/screenshot-en.png)
+![Reccoo recording demo — live waveform, level meter, and mascot](assets/reccoo-demo.gif)
 
 ![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square)
 ![WPF](https://img.shields.io/badge/UI-WPF-1f6feb?style=flat-square)
