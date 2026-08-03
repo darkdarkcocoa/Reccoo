@@ -155,7 +155,7 @@ gold       #FFD97A      lilac-deep #A48DD0
 ---
 
 ## 🤝 기여하기
-버그 신고, 아이디어 제안, Pull Request 모두 환영합니다! 시작하기 전에 [CONTRIBUTING.md](CONTRIBUTING.md)를 한 번 읽어 주세요. 프로젝트가 지키고 있는 원칙이 정리되어 있습니다.
+기여와 Pull Request는 언제든지 환영합니다! 버그 수정, 기능 개선, 새로운 아이디어를 자유롭게 Issue나 Pull Request로 제안해 주세요. 큰 변경은 먼저 Issue에서 방향을 함께 논의해 주시면 좋습니다. 자세한 원칙은 [CONTRIBUTING.md](CONTRIBUTING.md)를 확인해 주세요.
 
 ---
 

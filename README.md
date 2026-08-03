@@ -159,7 +159,7 @@ gold       #FFD97A      lilac-deep #A48DD0
 
 ## 🤝 Contributing
 
-Bug reports, ideas, and pull requests are all welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first — it explains the conventions this project follows.
+Contributions are always welcome! Feel free to open an issue or submit a pull request for bug fixes, improvements, or new ideas. For substantial changes, please open an issue first so we can discuss the direction together. See [CONTRIBUTING.md](CONTRIBUTING.md) for the project conventions.
 
 ---
 
