@@ -55,8 +55,9 @@
             <SolidColorBrush x:Key="AccentDeepBrush"  Color="{StaticResource CoralDeepColor}"/>
             <SolidColorBrush x:Key="AccentSoftBrush"  Color="{StaticResource CoralSoftColor}"/>
 
-            <!-- Display stays playful; dense UI copy uses a dedicated readable face. -->
-            <FontFamily x:Key="DisplayFont">pack://application:,,,/Fonts/#Galmuri11, Segoe UI</FontFamily>
+            <!-- 표시용 픽셀 폰트. 네오둥근모는 15px 격자라 이 앱이 쓰는 크기에서 획이 고르게 떨어지고,
+                 한글 11172자와 라틴을 한 벌로 덮는다. 조밀한 본문은 UiFont(SUIT)가 맡는다. -->
+            <FontFamily x:Key="DisplayFont">pack://application:,,,/Fonts/#NeoDunggeunmo, Segoe UI</FontFamily>
             <FontFamily x:Key="UiFont">pack://application:,,,/Fonts/#SUIT, Segoe UI</FontFamily>
             <FontFamily x:Key="PixelMonoFont">pack://application:,,,/Fonts/#Pixelify Sans, Consolas, Cascadia Mono</FontFamily>
 

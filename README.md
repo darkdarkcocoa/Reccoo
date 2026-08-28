@@ -56,7 +56,7 @@ Full changelogs are on the [Releases page](https://github.com/darkdarkcocoa/coco
 
 - **Live waveform** — the current audio dances across 56 pixel bars (mint → gold → coral gradient)
 - **Input level meter** — an 18-cell pixel meter shows the volume at a glance
-- **Mascot "Coco"** — bobs along with the audio, changes expressions with the recording state, and occasionally chats
+- **Mascot "Cocoa"** — bobs along with the audio, changes expressions with the recording state, and occasionally chats
 - **KOR | EN language toggle** — flip the whole UI (mascot chatter included) between Korean and English right from the title bar
 
 **📼 After recording**
@@ -117,13 +117,13 @@ cocoa-recorder/
 ├── App.xaml.cs
 ├── MainWindow.xaml           # 1216×736 main layout
 ├── MainWindow.xaml.cs        # Transport / waveform / library logic
-├── Mascot.cs                 # Coco sprite — drawn pixel by pixel, not an image asset
+├── Mascot.cs                 # Cocoa sprite — drawn pixel by pixel, not an image asset
 ├── AudioRecorder.cs          # NAudio capture + WAV/MP3 encoding
 ├── AssemblyInfo.cs
 ├── CocoaRecorder.csproj
 ├── Fonts/
 │   ├── PixelifySans.ttf      # OFL 1.1
-│   ├── Galmuri11-Bold.ttf    # OFL 1.1 (display font)
+│   ├── neodgm.ttf            # OFL 1.1 (display font)
 │   ├── SUIT-*.ttf            # OFL 1.1 (readable UI font)
 │   └── *-OFL.txt             # Font licenses
 └── design/                   # Claude Design mockups (gitignored)
@@ -136,7 +136,7 @@ cocoa-recorder/
 | Font | Role | License |
 |------|------|---------|
 | [Pixelify Sans](https://fonts.google.com/specimen/Pixelify+Sans) | Large timer numerals | OFL 1.1 |
-| [Galmuri11 Bold](https://github.com/quiple/galmuri) | Pixel display text and primary controls | OFL 1.1 |
+| [NeoDunggeunmo](https://github.com/neodgm/neodgm) | Pixel display text and primary controls | OFL 1.1 |
 | [SUIT](https://github.com/sun-typeface/SUIT) | Labels, paths, device names, and library metadata | OFL 1.1 |
 
 The split type system keeps the pixel personality in prominent controls while making dense Korean and English UI copy easier to read.
@@ -145,7 +145,7 @@ The split type system keeps the pixel personality in prominent controls while ma
 
 ## 🎨 Design tokens
 
-Coco's palette. When touching the UI, please pick from these colors instead of inventing new ones.
+Cocoa's palette. When touching the UI, please pick from these colors instead of inventing new ones.
 
 ```
 ink-dark   #3A2F4A      cream      #F6ECD6

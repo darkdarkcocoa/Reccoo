@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <Resource Include="Fonts\PixelifySans.ttf" />
-    <Resource Include="Fonts\Galmuri11-Bold.ttf" />
+    <Resource Include="Fonts\neodgm.ttf" />
     <Resource Include="Fonts\SUIT-Regular.ttf" />
     <Resource Include="Fonts\SUIT-SemiBold.ttf" />
   </ItemGroup>

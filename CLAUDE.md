@@ -30,12 +30,12 @@ The entire app is three source files plus one XAML resource dictionary. Don't go
 - **`MainWindow.xaml` / `MainWindow.xaml.cs`** — every interactive feature lives here: transport (record/stop/pause), 56-bar live waveform, 18-cell input meter, mascot sprite drawing, recordings library scan/play/delete, custom window chrome (drag, double-click maximize, grip resize). Animations are driven by three `DispatcherTimer`s (UI 50ms, waveform 60ms, blink 500ms). New installs save to `Music\Cocoa Recorder\CocoaRecorder_yyyyMMdd_HHmmss.{wav|mp3}`; existing `Music\Reccoo` libraries remain in place.
 - **`App.xaml`** — the design system. All pixel-art colors (cream/coral/mint/lilac/gold/ink palette), brushes, and the chunky button/combo/scrollbar styles with 4-px offset shadows are defined here as a single `ResourceDictionary`. Anything that affects look-and-feel almost certainly belongs in this file, not in `MainWindow.xaml`.
 
-The mascot ("Coco") is not an image asset — it's drawn pixel-by-pixel from `MainWindow.xaml.cs` into a `Canvas`, switching expressions based on a `MascotMood` enum.
+The mascot ("Cocoa") is not an image asset — it's drawn pixel-by-pixel from `MainWindow.xaml.cs` into a `Canvas`, switching expressions based on a `MascotMood` enum.
 
 ## Conventions
 
 - The app is bilingual: UI strings, mascot speech, and many comments are Korean. Keep that voice when editing user-facing text.
-- Fonts are embedded as explicit resources in the csproj. `Galmuri11 Bold` handles display text, `SUIT` handles dense Korean/English UI copy, and `Pixelify Sans` remains dedicated to the large timer.
+- Fonts are embedded as explicit resources in the csproj. `NeoDunggeunmo` handles display text in both languages — its 15-px grid keeps strokes even at the sizes this app uses, and it covers all 11,172 Hangul syllables plus Latin. `SUIT` handles dense Korean/English UI copy, and `Pixelify Sans` remains dedicated to the large timer.
 - `design/` holds Claude-generated design mocks and is gitignored; treat it as scratch, not source.
 - `Nullable` and `ImplicitUsings` are both enabled — match that style (no `using System;` clutter, honor nullable annotations).
 - When searching with Glob/Grep, ignore `obj/**/*_wpftmp.*.cs` and `obj/**/*.g.cs` — these are WPF/MSBuild-generated intermediates, not real source.

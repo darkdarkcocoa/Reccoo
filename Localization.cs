@@ -84,7 +84,7 @@ public static class L10n
         ["ChangeBtn"]       = ("변경", "Change"),
 
         // 마스코트 카드
-        ["MascotName"]      = ("코코 (Coco)", "Coco (코코)"),
+        ["MascotName"]      = ("코코아 (Cocoa)", "Cocoa"),
         ["Hello"]           = ("안녕! 오늘은\n뭘 녹음할까?", "Hi! What are we\nrecording today?"),
 
         // 보관함

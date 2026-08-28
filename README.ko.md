@@ -8,7 +8,7 @@
 코코아 레코더(이전 이름 Reccoo)는 PC에서 재생 중인 소리를 그대로 녹음해 주는 작은 레코더입니다.
 스트리밍 음악, 게임 사운드, 라이브 방송 등 스피커로 출력되는 소리라면 무엇이든 버튼 하나로 녹음해 WAV 또는 MP3로 저장할 수 있습니다.
 마이크를 거치지 않고 오디오 신호를 직접 캡처하기 때문에 주변 잡음 없이 깨끗한 녹음이 가능합니다.
-녹음하는 동안에는 픽셀 마스코트 "코코"가 곁에서 말을 걸어 줍니다. 🐤
+녹음하는 동안에는 픽셀 마스코트 "코코아"가 곁에서 말을 걸어 줍니다. 🐤
 
 ![코코아 레코더 — 한국어 UI](assets/screenshot-ko.png)
 
@@ -57,7 +57,7 @@
 
 - **라이브 파형** — 재생 중인 소리가 56개의 픽셀 바로 실시간 표시됩니다. (mint → gold → coral 그라데이션)
 - **입력 레벨 미터** — 18칸 픽셀 미터로 소리의 크기를 한눈에 확인할 수 있습니다.
-- **마스코트 "코코"** — 소리에 맞춰 움직이고, 녹음 상태에 따라 표정이 바뀌며, 가끔 말을 걸어 옵니다.
+- **마스코트 "코코아"** — 소리에 맞춰 움직이고, 녹음 상태에 따라 표정이 바뀌며, 가끔 말을 걸어 옵니다.
 - **KOR | EN 언어 토글** — 타이틀 바에서 한국어/영어 UI를 즉시 전환할 수 있습니다. 마스코트 대사까지 함께 바뀝니다.
 
 **📼 녹음 후**
@@ -122,7 +122,7 @@ cocoa-recorder/
 ├── CocoaRecorder.csproj
 ├── Fonts/
 │   ├── PixelifySans.ttf      # OFL 1.1
-│   ├── Galmuri11-Bold.ttf    # OFL 1.1 (디스플레이 글꼴)
+│   ├── neodgm.ttf            # OFL 1.1 (디스플레이 글꼴)
 │   ├── SUIT-*.ttf            # OFL 1.1 (가독성 UI 글꼴)
 │   └── *-OFL.txt             # 폰트 라이선스
 └── design/                   # Claude Design 시안 (gitignored)
@@ -134,7 +134,7 @@ cocoa-recorder/
 | 폰트 | 용도 | 라이선스 |
 |------|------|----------|
 | [Pixelify Sans](https://fonts.google.com/specimen/Pixelify+Sans) | 대형 타이머 숫자 | OFL 1.1 |
-| [Galmuri11 Bold](https://github.com/quiple/galmuri) | 픽셀 제목과 주요 조작부 | OFL 1.1 |
+| [네오둥근모](https://github.com/neodgm/neodgm) | 픽셀 제목과 주요 조작부 | OFL 1.1 |
 | [SUIT](https://github.com/sun-typeface/SUIT) | 설명, 경로, 장치명과 보관함 정보 | OFL 1.1 |
 
 중요한 조작부에는 픽셀 감성을 유지하고, 정보량이 많은 한글·영문 UI에는 읽기 쉬운 글꼴을 적용했습니다.
