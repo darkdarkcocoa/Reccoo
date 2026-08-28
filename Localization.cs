@@ -67,10 +67,12 @@ public static class L10n
         ["PauseBtn"]        = ("일시정지", "Pause"),
         ["ResumeBtn"]       = ("재개", "Resume"),
         ["StopBtn"]         = ("정지", "Stop"),
-        ["CountdownToggle"] = ("3초 준비", "3-sec countdown"),
-        ["CountdownHint"]   = ("끄면 버튼을 누르는 즉시 녹음해요", "Turn off to record immediately"),
-        ["ShortcutHint"]    = ("Space  녹음 토글   ·   P  일시정지   ·   Ctrl+O  폴더",
-                               "Space  record   ·   P  pause   ·   Ctrl+O  folder"),
+        ["CountdownOn"]     = ("3초 후", "3 sec"),
+        ["CountdownOff"]    = ("바로", "Instant"),
+        ["CountdownHint"]   = ("'바로'를 고르면 버튼을 누르는 즉시 녹음해요",
+                               "Pick Instant to start recording the moment you press Record"),
+        ["ShortcutHint"]    = ("Space 시작/정지 · P 일시정지 · Ctrl+O 폴더",
+                               "Space start/stop · P pause · Ctrl+O folder"),
 
         // 설정 패널
         ["SettingsTitle"]   = ("⚙  녹음 설정", "⚙  Recording settings"),

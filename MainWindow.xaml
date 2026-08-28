@@ -212,7 +212,7 @@
 
                                 <!-- Transport buttons -->
                                 <StackPanel Grid.Row="3" HorizontalAlignment="Center" Margin="0,8,0,14">
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <StackPanel x:Name="TransportButtons" Orientation="Horizontal" HorizontalAlignment="Center">
                                     <Button x:Name="RecordButton"
                                             Style="{StaticResource PixelButton}"
                                             Background="{StaticResource AccentBrush}"
@@ -277,22 +277,40 @@
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal"
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            Margin="0,10,0,0">
-                                    <ToggleButton x:Name="CountdownToggle"
-                                                  Style="{StaticResource CountdownSwitch}"
-                                                  Content="{DynamicResource L_CountdownToggle}"
-                                                  ToolTip="{DynamicResource L_CountdownHint}"/>
-                                    <Border Width="1" Height="18"
-                                            Background="{StaticResource CreamDeepBrush}"
-                                            Margin="12,0"/>
-                                    <TextBlock Text="{DynamicResource L_ShortcutHint}"
+                                <!-- 카운트다운 선택은 녹음 버튼 왼쪽 모서리에, 힌트는 오른쪽 끝에 붙는다.
+                                     라벨 길이가 달라지는 두 언어에서 같은 자리를 유지하기 위한 배치다. -->
+                                <Grid Margin="0,12,0,0"
+                                      Width="{Binding ActualWidth, ElementName=TransportButtons}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*" MinWidth="12"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"
+                                                Orientation="Horizontal"
+                                                VerticalAlignment="Center">
+                                        <RadioButton x:Name="CountdownOnToggle"
+                                                     Style="{StaticResource CountdownSegment}"
+                                                     GroupName="Countdown"
+                                                     Content="{DynamicResource L_CountdownOn}"
+                                                     ToolTip="{DynamicResource L_CountdownHint}"
+                                                     ToolTipService.ShowOnDisabled="True"
+                                                     Checked="Countdown_Checked"/>
+                                        <RadioButton x:Name="CountdownOffToggle"
+                                                     Style="{StaticResource CountdownSegment}"
+                                                     GroupName="Countdown"
+                                                     Content="{DynamicResource L_CountdownOff}"
+                                                     ToolTip="{DynamicResource L_CountdownHint}"
+                                                     ToolTipService.ShowOnDisabled="True"
+                                                     Checked="Countdown_Checked"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="2"
+                                               Text="{DynamicResource L_ShortcutHint}"
                                                VerticalAlignment="Center"
                                                FontSize="12"
+                                               TextTrimming="CharacterEllipsis"
                                                Foreground="{StaticResource InkSoftBrush}"/>
-                                </StackPanel>
+                                </Grid>
                                 </StackPanel>
                             </Grid>
                         </ContentControl>

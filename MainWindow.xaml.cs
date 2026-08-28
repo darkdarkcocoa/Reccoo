@@ -24,6 +24,7 @@ public partial class MainWindow : Window
 
     private readonly AudioRecorder _recorder = new();
     private readonly AppPreferences _preferences = AppPreferences.Load();
+    private bool _preferencesReady;
     private string _saveFolder = string.Empty;
 
     private readonly DispatcherTimer _uiTimer;
@@ -51,9 +52,9 @@ public partial class MainWindow : Window
         UpdateLangToggle();
         L10n.LanguageChanged += OnLanguageChanged;
 
-        CountdownToggle.IsChecked = _preferences.CountdownEnabled;
-        CountdownToggle.Checked += CountdownToggle_Changed;
-        CountdownToggle.Unchecked += CountdownToggle_Changed;
+        CountdownOnToggle.IsChecked = _preferences.CountdownEnabled;
+        CountdownOffToggle.IsChecked = !_preferences.CountdownEnabled;
+        _preferencesReady = true;
 
         _saveFolder = ResolveInitialSaveFolder();
         Directory.CreateDirectory(_saveFolder);
@@ -102,6 +103,10 @@ public partial class MainWindow : Window
     {
         // Don't hijack typing inside text inputs (renames, future search box, etc.)
         if (Keyboard.FocusedElement is TextBox) return;
+        // Buttons, toggles and radios answer Space themselves. Without this the window-level
+        // shortcut would start a recording behind the focused control's back.
+        if (e.Key == Key.Space &&
+            Keyboard.FocusedElement is System.Windows.Controls.Primitives.ButtonBase) return;
 
         bool ctrl = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
 
@@ -298,9 +303,11 @@ public partial class MainWindow : Window
         UpdateFormatInfo();
     }
 
-    private void CountdownToggle_Changed(object sender, RoutedEventArgs e)
+    private void Countdown_Checked(object sender, RoutedEventArgs e)
     {
-        _preferences.CountdownEnabled = CountdownToggle.IsChecked == true;
+        // Fires once while XAML loads, before the stored value is applied — ignore that one.
+        if (!_preferencesReady) return;
+        _preferences.CountdownEnabled = CountdownOnToggle.IsChecked == true;
         _preferences.Save();
     }
 
@@ -386,7 +393,7 @@ public partial class MainWindow : Window
             MascotSpeech.Text = L10n.T("MsgPickDevice");
             return;
         }
-        if (CountdownToggle.IsChecked == true)
+        if (CountdownOnToggle.IsChecked == true)
             BeginCountdown(3);
         else
             ActuallyStartRecording();
@@ -399,7 +406,7 @@ public partial class MainWindow : Window
         WavToggle.IsEnabled = false;
         Mp3Toggle.IsEnabled = false;
         RecordButton.IsEnabled = false;
-        CountdownToggle.IsEnabled = false;
+        SetCountdownChoiceEnabled(false);
         StopButton.IsEnabled = true; // Lets the user cancel mid-count via the stop button or Space.
         PauseButton.Visibility = Visibility.Collapsed;
 
@@ -521,7 +528,7 @@ public partial class MainWindow : Window
         MedToggle.IsEnabled = !recording;
         HiToggle.IsEnabled = !recording;
         RecordButton.IsEnabled = !recording;
-        CountdownToggle.IsEnabled = !recording;
+        SetCountdownChoiceEnabled(!recording);
         StopButton.IsEnabled = recording;
         PauseButton.IsEnabled = recording;
         PauseButton.Visibility = recording ? Visibility.Visible : Visibility.Collapsed;
@@ -545,6 +552,12 @@ public partial class MainWindow : Window
             _blinkOn = true;
         }
         UpdateStatusDot();
+    }
+
+    private void SetCountdownChoiceEnabled(bool enabled)
+    {
+        CountdownOnToggle.IsEnabled = enabled;
+        CountdownOffToggle.IsEnabled = enabled;
     }
 
     private void UpdateStatusDot()

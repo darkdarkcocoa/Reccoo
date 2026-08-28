@@ -45,7 +45,6 @@
             <SolidColorBrush x:Key="CoralSoftBrush" Color="{StaticResource CoralSoftColor}"/>
             <SolidColorBrush x:Key="MintBrush"     Color="{StaticResource MintColor}"/>
             <SolidColorBrush x:Key="MintDeepBrush" Color="{StaticResource MintDeepColor}"/>
-            <SolidColorBrush x:Key="MintSoftBrush" Color="{StaticResource MintSoftColor}"/>
             <SolidColorBrush x:Key="LilacBrush"    Color="{StaticResource LilacColor}"/>
             <SolidColorBrush x:Key="LilacDeepBrush" Color="{StaticResource LilacDeepColor}"/>
             <SolidColorBrush x:Key="GoldBrush"     Color="{StaticResource GoldColor}"/>
@@ -220,6 +219,21 @@
             <!-- ============================================================
                  FormatToggle — WAV / MP3 (RadioButton)
                  ============================================================ -->
+            <!-- 키보드 포커스 링 — 잉크 점선. 키보드로 이동했을 때만 나타난다. -->
+            <Style x:Key="PixelFocusVisual">
+                <Setter Property="Control.Template">
+                    <Setter.Value>
+                        <ControlTemplate>
+                            <Rectangle Stroke="{StaticResource InkDarkBrush}"
+                                       StrokeThickness="2"
+                                       StrokeDashArray="2 2"
+                                       Margin="3"
+                                       SnapsToDevicePixels="True"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
             <Style x:Key="FormatToggle" TargetType="RadioButton">
                 <Setter Property="Background" Value="{StaticResource PaperBrush}"/>
                 <Setter Property="Foreground" Value="{StaticResource InkDarkBrush}"/>
@@ -231,6 +245,7 @@
                 <Setter Property="HorizontalContentAlignment" Value="Center"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
                 <Setter Property="SnapsToDevicePixels" Value="True"/>
+                <Setter Property="FocusVisualStyle" Value="{StaticResource PixelFocusVisual}"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="RadioButton">
@@ -274,62 +289,11 @@
                 <Setter Property="FontWeight" Value="SemiBold"/>
             </Style>
 
-            <!-- Compact start-delay switch shown beside the transport hints. -->
-            <Style x:Key="CountdownSwitch" TargetType="ToggleButton">
-                <Setter Property="Background" Value="{StaticResource PaperBrush}"/>
-                <Setter Property="Foreground" Value="{StaticResource InkDarkBrush}"/>
-                <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
+            <!-- 카운트다운 선택 — WAV|MP3, KOR|EN과 같은 세그먼티드 컨트롤 어휘를 쓴다. -->
+            <Style x:Key="CountdownSegment" TargetType="RadioButton" BasedOn="{StaticResource FormatToggle}">
+                <Setter Property="Height" Value="30"/>
                 <Setter Property="FontSize" Value="13"/>
-                <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="Cursor" Value="Hand"/>
-                <Setter Property="Height" Value="32"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="ToggleButton">
-                            <Border x:Name="switchBorder"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{StaticResource InkDarkBrush}"
-                                    BorderThickness="2"
-                                    Padding="10,4"
-                                    SnapsToDevicePixels="True">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <ContentPresenter VerticalAlignment="Center"/>
-                                    <Border Grid.Column="1"
-                                            x:Name="track"
-                                            Width="38" Height="18"
-                                            Margin="10,0,0,0"
-                                            Background="{StaticResource CreamDeepBrush}"
-                                            BorderBrush="{StaticResource InkDarkBrush}"
-                                            BorderThickness="2">
-                                        <Border x:Name="knob"
-                                                Width="12" Height="12"
-                                                Margin="1"
-                                                HorizontalAlignment="Left"
-                                                Background="{StaticResource InkSoftBrush}"/>
-                                    </Border>
-                                </Grid>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsChecked" Value="True">
-                                    <Setter TargetName="switchBorder" Property="Background" Value="{StaticResource MintSoftBrush}"/>
-                                    <Setter TargetName="track" Property="Background" Value="{StaticResource MintBrush}"/>
-                                    <Setter TargetName="knob" Property="HorizontalAlignment" Value="Right"/>
-                                    <Setter TargetName="knob" Property="Background" Value="{StaticResource MintDeepBrush}"/>
-                                </Trigger>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="switchBorder" Property="BorderBrush" Value="{StaticResource AccentDeepBrush}"/>
-                                </Trigger>
-                                <Trigger Property="IsEnabled" Value="False">
-                                    <Setter Property="Opacity" Value="0.45"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
+                <Setter Property="MinWidth" Value="66"/>
             </Style>
 
             <!-- ============================================================
