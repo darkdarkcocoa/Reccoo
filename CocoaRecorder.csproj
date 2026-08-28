@@ -3,6 +3,10 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows</TargetFramework>
+    <AssemblyName>CocoaRecorder</AssemblyName>
+    <AssemblyTitle>Cocoa Recorder</AssemblyTitle>
+    <Product>Cocoa Recorder</Product>
+    <Description>A cozy pixel-art system audio recorder for Windows.</Description>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
@@ -15,7 +19,9 @@
 
   <ItemGroup>
     <Resource Include="Fonts\PixelifySans.ttf" />
-    <Resource Include="Fonts\DotGothic16-Regular.ttf" />
+    <Resource Include="Fonts\Galmuri11-Bold.ttf" />
+    <Resource Include="Fonts\SUIT-Regular.ttf" />
+    <Resource Include="Fonts\SUIT-SemiBold.ttf" />
   </ItemGroup>
 
 </Project>

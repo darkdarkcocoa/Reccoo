@@ -3,7 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using WpfRectangle = System.Windows.Shapes.Rectangle;
 
-namespace Reccoo;
+namespace CocoaRecorder;
 
 public enum MascotMood { Idle, Recording, Paused }
 

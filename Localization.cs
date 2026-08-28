@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Windows;
 
-namespace Reccoo;
+namespace CocoaRecorder;
 
 public enum AppLanguage { Korean, English }
 
@@ -52,7 +52,7 @@ public static class L10n
     private static readonly Dictionary<string, (string Ko, string En)> Table = new()
     {
         // 타이틀바
-        ["WindowTitle"]     = ("♪  Reccoo — 귀여운 사운드 레코더  ♪", "♪  Reccoo — cute sound recorder  ♪"),
+        ["WindowTitle"]     = ("♪  코코아 레코더 — 포근한 시스템 녹음기  ♪", "♪  Cocoa Recorder — cozy system audio  ♪"),
 
         // 상태 표시
         ["StatusIdle"]      = ("○ 대기 중", "○ Standing by"),
@@ -67,6 +67,8 @@ public static class L10n
         ["PauseBtn"]        = ("일시정지", "Pause"),
         ["ResumeBtn"]       = ("재개", "Resume"),
         ["StopBtn"]         = ("정지", "Stop"),
+        ["CountdownToggle"] = ("3초 준비", "3-sec countdown"),
+        ["CountdownHint"]   = ("끄면 버튼을 누르는 즉시 녹음해요", "Turn off to record immediately"),
         ["ShortcutHint"]    = ("Space  녹음 토글   ·   P  일시정지   ·   Ctrl+O  폴더",
                                "Space  record   ·   P  pause   ·   Ctrl+O  folder"),
 
@@ -80,7 +82,7 @@ public static class L10n
         ["ChangeBtn"]       = ("변경", "Change"),
 
         // 마스코트 카드
-        ["MascotName"]      = ("레코 (Recco)", "Recco (레코)"),
+        ["MascotName"]      = ("코코 (Coco)", "Coco (코코)"),
         ["Hello"]           = ("안녕! 오늘은\n뭘 녹음할까?", "Hi! What are we\nrecording today?"),
 
         // 보관함

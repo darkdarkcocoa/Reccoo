@@ -4,7 +4,7 @@ using NAudio.CoreAudioApi;
 using NAudio.Lame;
 using NAudio.Wave;
 
-namespace Reccoo;
+namespace CocoaRecorder;
 
 public enum RecordingFormat { Wav, Mp3 }
 public enum Mp3Quality { Low, Medium, High }
@@ -53,7 +53,7 @@ public sealed class AudioRecorder : IDisposable
 
         _format = format;
         _finalPath = finalPath;
-        _tempWavPath = Path.Combine(Path.GetTempPath(), $"reccoo_{Guid.NewGuid():N}.wav");
+        _tempWavPath = Path.Combine(Path.GetTempPath(), $"cocoa_recorder_{Guid.NewGuid():N}.wav");
 
         _capture = new WasapiLoopbackCapture(device);
         _wavWriter = new WaveFileWriter(_tempWavPath, _capture.WaveFormat);

@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace Reccoo;
+namespace CocoaRecorder;
 
 /// <summary>
 /// Interaction logic for App.xaml

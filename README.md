@@ -1,13 +1,13 @@
-# Reccoo
+# Cocoa Recorder
 
-> 🎀 **A cute pixel-art sound recorder for Windows**
+> 🎀 **A cozy pixel-art system audio recorder for Windows**
 > Built on .NET 9 + WPF
 
 [한국어](README.ko.md) | **English**
 
-Reccoo is a small recorder that captures whatever your PC is playing. Streaming music, game audio, live broadcasts — anything coming out of your speakers can be recorded with a single click and saved as WAV or MP3. Since it records the audio signal directly (not through a microphone), recordings are clean with no background noise. And while you record, the pixel mascot "Recco" keeps you company. 🐤
+Cocoa Recorder (formerly Reccoo) is a small recorder that captures whatever your PC is playing. Streaming music, game audio, live broadcasts — anything coming out of your speakers can be recorded with a single click and saved as WAV or MP3. Since it records the audio signal directly (not through a microphone), recordings are clean with no background noise. And while you record, the pixel mascot "Coco" keeps you company. 🐤
 
-![Reccoo recording demo — live waveform, level meter, and mascot](assets/reccoo-demo.gif)
+![Cocoa Recorder — English UI](assets/screenshot-en.png)
 
 ![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square)
 ![WPF](https://img.shields.io/badge/UI-WPF-1f6feb?style=flat-square)
@@ -34,7 +34,7 @@ Interested in adding another language? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Download, double-click, done. No installer, no separate .NET runtime required.
 
-> **[📦 Get Reccoo.exe (Windows x64, ~76 MB)](https://github.com/darkdarkcocoa/Reccoo/releases/latest/download/Reccoo.exe)** — this link always points to the **latest release**
+> **[📦 Get the latest Windows release](https://github.com/darkdarkcocoa/Reccoo/releases/latest)** — download `CocoaRecorder.exe` (`Reccoo.exe` on releases before the rename)
 > ([![Latest version](https://img.shields.io/github/v/release/darkdarkcocoa/Reccoo?style=flat-square&label=latest&color=b9e4c9)](https://github.com/darkdarkcocoa/Reccoo/releases/latest) [![Release date](https://img.shields.io/github/release-date/darkdarkcocoa/Reccoo?style=flat-square&label=released&color=ffd97a)](https://github.com/darkdarkcocoa/Reccoo/releases/latest))
 >
 > It is a self-contained single-file executable with the .NET runtime bundled in. On first launch, SmartScreen may warn about an "unrecognized app" — this is because the binary is not code-signed yet. Click **"More info" → "Run anyway"** to start it.
@@ -48,7 +48,7 @@ Full changelogs are on the [Releases page](https://github.com/darkdarkcocoa/Recc
 **🎙️ Recording**
 
 - **System audio capture** — records whatever comes out of your speakers, losslessly (WASAPI loopback)
-- **3-second countdown** — the app counts down before recording starts, so you can nail the timing
+- **Optional 3-second countdown** — keep it for precise timing or switch it off for instant recording
 - **Pause / resume** — skip ads or unwanted sections and pick up where you left off
 - **WAV / MP3 toggle** — keep the original as WAV, or save space with MP3 (LO / MED / HI quality)
 
@@ -56,7 +56,7 @@ Full changelogs are on the [Releases page](https://github.com/darkdarkcocoa/Recc
 
 - **Live waveform** — the current audio dances across 56 pixel bars (mint → gold → coral gradient)
 - **Input level meter** — an 18-cell pixel meter shows the volume at a glance
-- **Mascot "Recco"** — bobs along with the audio, changes expressions with the recording state, and occasionally chats
+- **Mascot "Coco"** — bobs along with the audio, changes expressions with the recording state, and occasionally chats
 - **KOR | EN language toggle** — flip the whole UI (mascot chatter included) between Korean and English right from the title bar
 
 **📼 After recording**
@@ -71,7 +71,7 @@ Full changelogs are on the [Releases page](https://github.com/darkdarkcocoa/Recc
 
 ## 💡 What can you record?
 
-Reccoo captures **any sound your PC plays**, so it's a handy free tool for things like:
+Cocoa Recorder captures **any sound your PC plays**, so it's a handy free tool for things like:
 
 - 🎧 **Recording streaming music** — Spotify, YouTube Music, Apple Music, SoundCloud, Bandcamp
 - 📺 **Saving audio from videos** — YouTube, Twitch, Netflix and other in-browser playback
@@ -100,10 +100,10 @@ Or a release build:
 
 ```powershell
 dotnet build -c Release
-./bin/Release/net9.0-windows/Reccoo.exe
+./bin/Release/net9.0-windows/CocoaRecorder.exe
 ```
 
-Audio is captured from the default output device, and files are saved to `Documents\Music\Reccoo\` as `Reccoo_yyyyMMdd_HHmmss.{wav|mp3}`.
+Audio is captured from the default output device. New installs save files to `Music\Cocoa Recorder\` as `CocoaRecorder_yyyyMMdd_HHmmss.{wav|mp3}`; existing `Music\Reccoo\` libraries continue to open in place.
 
 ---
 
@@ -117,13 +117,14 @@ Reccoo/
 ├── App.xaml.cs
 ├── MainWindow.xaml           # 1216×736 main layout
 ├── MainWindow.xaml.cs        # Transport / waveform / library logic
-├── Mascot.cs                 # Recco sprite — drawn pixel by pixel, not an image asset
+├── Mascot.cs                 # Coco sprite — drawn pixel by pixel, not an image asset
 ├── AudioRecorder.cs          # NAudio capture + WAV/MP3 encoding
 ├── AssemblyInfo.cs
-├── Reccoo.csproj
+├── CocoaRecorder.csproj
 ├── Fonts/
 │   ├── PixelifySans.ttf      # OFL 1.1
-│   ├── DotGothic16-Regular.ttf  # OFL 1.1 (Korean pixel font)
+│   ├── Galmuri11-Bold.ttf    # OFL 1.1 (display font)
+│   ├── SUIT-*.ttf            # OFL 1.1 (readable UI font)
 │   └── *-OFL.txt             # Font licenses
 └── design/                   # Claude Design mockups (gitignored)
 ```
@@ -134,16 +135,17 @@ Reccoo/
 
 | Font | Role | License |
 |------|------|---------|
-| [Pixelify Sans](https://fonts.google.com/specimen/Pixelify+Sans) | Latin / numerals | OFL 1.1 |
-| [DotGothic16](https://fonts.google.com/specimen/DotGothic16) | Korean / CJK | OFL 1.1 |
+| [Pixelify Sans](https://fonts.google.com/specimen/Pixelify+Sans) | Large timer numerals | OFL 1.1 |
+| [Galmuri11 Bold](https://github.com/quiple/galmuri) | Pixel display text and primary controls | OFL 1.1 |
+| [SUIT](https://github.com/sun-typeface/SUIT) | Labels, paths, device names, and library metadata | OFL 1.1 |
 
-Thanks to WPF's glyph fallback, text automatically resolves through `Pixelify Sans → DotGothic16 → Consolas`, so Korean renders in pixel style with no extra code.
+The split type system keeps the pixel personality in prominent controls while making dense Korean and English UI copy easier to read.
 
 ---
 
 ## 🎨 Design tokens
 
-Recco's palette. When touching the UI, please pick from these colors instead of inventing new ones.
+Coco's palette. When touching the UI, please pick from these colors instead of inventing new ones.
 
 ```
 ink-dark   #3A2F4A      cream      #F6ECD6

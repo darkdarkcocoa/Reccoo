@@ -1,7 +1,7 @@
-<Application x:Class="Reccoo.App"
+<Application x:Class="CocoaRecorder.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:Reccoo"
+             xmlns:local="clr-namespace:CocoaRecorder"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
@@ -9,11 +9,11 @@
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
             <!-- ============================================================
-                 Reccoo — pastel pixel-art palette
+                 Cocoa Recorder — warm pastel pixel-art palette
                  ============================================================ -->
-            <Color x:Key="InkColor">#FF4A3C5C</Color>
-            <Color x:Key="InkDarkColor">#FF3A2F4A</Color>
-            <Color x:Key="InkSoftColor">#FF7A6A8A</Color>
+            <Color x:Key="InkColor">#FF5B414B</Color>
+            <Color x:Key="InkDarkColor">#FF402F38</Color>
+            <Color x:Key="InkSoftColor">#FF756068</Color>
 
             <Color x:Key="CreamColor">#FFF6ECD6</Color>
             <Color x:Key="CreamDeepColor">#FFECDCB8</Color>
@@ -45,6 +45,7 @@
             <SolidColorBrush x:Key="CoralSoftBrush" Color="{StaticResource CoralSoftColor}"/>
             <SolidColorBrush x:Key="MintBrush"     Color="{StaticResource MintColor}"/>
             <SolidColorBrush x:Key="MintDeepBrush" Color="{StaticResource MintDeepColor}"/>
+            <SolidColorBrush x:Key="MintSoftBrush" Color="{StaticResource MintSoftColor}"/>
             <SolidColorBrush x:Key="LilacBrush"    Color="{StaticResource LilacColor}"/>
             <SolidColorBrush x:Key="LilacDeepBrush" Color="{StaticResource LilacDeepColor}"/>
             <SolidColorBrush x:Key="GoldBrush"     Color="{StaticResource GoldColor}"/>
@@ -55,8 +56,9 @@
             <SolidColorBrush x:Key="AccentDeepBrush"  Color="{StaticResource CoralDeepColor}"/>
             <SolidColorBrush x:Key="AccentSoftBrush"  Color="{StaticResource CoralSoftColor}"/>
 
-            <!-- Pixel-art font stack — embedded TTFs (Pixelify Sans for Latin, DotGothic16 for Korean) -->
-            <FontFamily x:Key="PixelFont">pack://application:,,,/Fonts/#Pixelify Sans, pack://application:,,,/Fonts/#DotGothic16, Consolas</FontFamily>
+            <!-- Display stays playful; dense UI copy uses a dedicated readable face. -->
+            <FontFamily x:Key="DisplayFont">pack://application:,,,/Fonts/#Galmuri11, Segoe UI</FontFamily>
+            <FontFamily x:Key="UiFont">pack://application:,,,/Fonts/#SUIT, Segoe UI</FontFamily>
             <FontFamily x:Key="PixelMonoFont">pack://application:,,,/Fonts/#Pixelify Sans, Consolas, Cascadia Mono</FontFamily>
 
             <!-- ============================================================
@@ -72,12 +74,12 @@
                         <ControlTemplate TargetType="ContentControl">
                             <Grid SnapsToDevicePixels="True">
                                 <!-- offset 그림자 (Body보다 4px 아래) -->
-                                <Rectangle Fill="{StaticResource InkDarkBrush}" Margin="0,4,0,0"/>
+                                <Rectangle Fill="{StaticResource InkDarkBrush}" Margin="0,3,0,0"/>
                                 <!-- Body -->
                                 <Border Background="{TemplateBinding Background}"
                                         BorderBrush="{StaticResource InkDarkBrush}"
-                                        BorderThickness="3"
-                                        Margin="0,0,0,4"
+                                        BorderThickness="2"
+                                        Margin="0,0,0,3"
                                         SnapsToDevicePixels="True">
                                     <Grid>
                                         <!-- top highlight -->
@@ -101,7 +103,7 @@
                 <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
                 <Setter Property="BorderBrush" Value="{StaticResource AccentDeepBrush}"/>
                 <Setter Property="Foreground" Value="{StaticResource InkDarkBrush}"/>
-                <Setter Property="FontFamily" Value="{StaticResource PixelFont}"/>
+                <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
                 <Setter Property="FontSize" Value="20"/>
                 <Setter Property="FontWeight" Value="Bold"/>
                 <Setter Property="Cursor" Value="Hand"/>
@@ -163,7 +165,7 @@
             <Style x:Key="TitleBarButton" TargetType="Button">
                 <Setter Property="Background" Value="{StaticResource PaperBrush}"/>
                 <Setter Property="Foreground" Value="{StaticResource InkDarkBrush}"/>
-                <Setter Property="FontFamily" Value="{StaticResource PixelFont}"/>
+                <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
                 <Setter Property="FontSize" Value="13"/>
                 <Setter Property="FontWeight" Value="Bold"/>
                 <Setter Property="Width" Value="26"/>
@@ -221,7 +223,7 @@
             <Style x:Key="FormatToggle" TargetType="RadioButton">
                 <Setter Property="Background" Value="{StaticResource PaperBrush}"/>
                 <Setter Property="Foreground" Value="{StaticResource InkDarkBrush}"/>
-                <Setter Property="FontFamily" Value="{StaticResource PixelFont}"/>
+                <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
                 <Setter Property="FontSize" Value="15"/>
                 <Setter Property="FontWeight" Value="Bold"/>
                 <Setter Property="Height" Value="38"/>
@@ -268,6 +270,66 @@
             <Style x:Key="TitleLangToggle" TargetType="RadioButton" BasedOn="{StaticResource FormatToggle}">
                 <Setter Property="Height" Value="22"/>
                 <Setter Property="FontSize" Value="11"/>
+                <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+            </Style>
+
+            <!-- Compact start-delay switch shown beside the transport hints. -->
+            <Style x:Key="CountdownSwitch" TargetType="ToggleButton">
+                <Setter Property="Background" Value="{StaticResource PaperBrush}"/>
+                <Setter Property="Foreground" Value="{StaticResource InkDarkBrush}"/>
+                <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Height" Value="32"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Border x:Name="switchBorder"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{StaticResource InkDarkBrush}"
+                                    BorderThickness="2"
+                                    Padding="10,4"
+                                    SnapsToDevicePixels="True">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ContentPresenter VerticalAlignment="Center"/>
+                                    <Border Grid.Column="1"
+                                            x:Name="track"
+                                            Width="38" Height="18"
+                                            Margin="10,0,0,0"
+                                            Background="{StaticResource CreamDeepBrush}"
+                                            BorderBrush="{StaticResource InkDarkBrush}"
+                                            BorderThickness="2">
+                                        <Border x:Name="knob"
+                                                Width="12" Height="12"
+                                                Margin="1"
+                                                HorizontalAlignment="Left"
+                                                Background="{StaticResource InkSoftBrush}"/>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="switchBorder" Property="Background" Value="{StaticResource MintSoftBrush}"/>
+                                    <Setter TargetName="track" Property="Background" Value="{StaticResource MintBrush}"/>
+                                    <Setter TargetName="knob" Property="HorizontalAlignment" Value="Right"/>
+                                    <Setter TargetName="knob" Property="Background" Value="{StaticResource MintDeepBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="switchBorder" Property="BorderBrush" Value="{StaticResource AccentDeepBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.45"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
 
             <!-- ============================================================
@@ -288,10 +350,10 @@
             <Style x:Key="PixelComboBox" TargetType="ComboBox">
                 <Setter Property="Background" Value="{StaticResource PaperBrush}"/>
                 <Setter Property="Foreground" Value="{StaticResource InkDarkBrush}"/>
-                <Setter Property="FontFamily" Value="{StaticResource PixelFont}"/>
+                <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
                 <Setter Property="FontSize" Value="14"/>
-                <Setter Property="FontWeight" Value="Bold"/>
-                <Setter Property="Height" Value="40"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Height" Value="42"/>
                 <Setter Property="Padding" Value="12,0"/>
                 <Setter Property="Cursor" Value="Hand"/>
                 <Setter Property="SnapsToDevicePixels" Value="True"/>
@@ -346,7 +408,7 @@
                         <Style TargetType="ComboBoxItem">
                             <Setter Property="Background" Value="Transparent"/>
                             <Setter Property="Foreground" Value="{StaticResource InkDarkBrush}"/>
-                            <Setter Property="FontFamily" Value="{StaticResource PixelFont}"/>
+                            <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
                             <Setter Property="FontSize" Value="13"/>
                             <Setter Property="Padding" Value="12,8"/>
                             <Setter Property="Cursor" Value="Hand"/>

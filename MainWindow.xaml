@@ -1,11 +1,11 @@
-<Window x:Class="Reccoo.MainWindow"
+<Window x:Class="CocoaRecorder.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Reccoo"
+        xmlns:local="clr-namespace:CocoaRecorder"
         mc:Ignorable="d"
-        Title="Reccoo"
+        Title="Cocoa Recorder"
         Width="1216" Height="852"
         MinWidth="1080" MinHeight="840"
         WindowStartupLocation="CenterScreen"
@@ -13,7 +13,7 @@
         AllowsTransparency="True"
         Background="Transparent"
         ResizeMode="CanResizeWithGrip"
-        FontFamily="{StaticResource PixelFont}"
+        FontFamily="{StaticResource UiFont}"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
         TextOptions.TextFormattingMode="Display">
@@ -71,6 +71,7 @@
                         <TextBlock Grid.Column="1"
                                    Text="{DynamicResource L_WindowTitle}"
                                    Foreground="{StaticResource InkDarkBrush}"
+                                   FontFamily="{StaticResource DisplayFont}"
                                    FontSize="16"
                                    FontWeight="Bold"
                                    HorizontalAlignment="Center"
@@ -93,8 +94,8 @@
                     <Grid Margin="22">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="18"/>
-                            <ColumnDefinition Width="360"/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="378"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -118,7 +119,7 @@
                                 <Border Grid.Row="0"
                                         Background="{StaticResource AccentSoftBrush}"
                                         BorderBrush="{StaticResource InkDarkBrush}"
-                                        BorderThickness="0,0,0,3"
+                                        BorderThickness="0,0,0,2"
                                         Padding="18,12">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -143,6 +144,7 @@
                                         <TextBlock Grid.Column="1"
                                                    x:Name="StatusLabel"
                                                    Text="{DynamicResource L_StatusIdle}"
+                                                   FontFamily="{StaticResource DisplayFont}"
                                                    FontSize="16"
                                                    FontWeight="Bold"
                                                    Foreground="{StaticResource InkDarkBrush}"
@@ -275,12 +277,22 @@
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>
-                                <TextBlock Text="{DynamicResource L_ShortcutHint}"
-                                           HorizontalAlignment="Center"
-                                           FontSize="11"
-                                           Foreground="{StaticResource InkSoftBrush}"
-                                           Margin="0,10,0,0"
-                                           Opacity="0.85"/>
+                                <StackPanel Orientation="Horizontal"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Margin="0,10,0,0">
+                                    <ToggleButton x:Name="CountdownToggle"
+                                                  Style="{StaticResource CountdownSwitch}"
+                                                  Content="{DynamicResource L_CountdownToggle}"
+                                                  ToolTip="{DynamicResource L_CountdownHint}"/>
+                                    <Border Width="1" Height="18"
+                                            Background="{StaticResource CreamDeepBrush}"
+                                            Margin="12,0"/>
+                                    <TextBlock Text="{DynamicResource L_ShortcutHint}"
+                                               VerticalAlignment="Center"
+                                               FontSize="12"
+                                               Foreground="{StaticResource InkSoftBrush}"/>
+                                </StackPanel>
                                 </StackPanel>
                             </Grid>
                         </ContentControl>
@@ -299,13 +311,14 @@
                             <ContentControl Grid.Row="0" Style="{StaticResource PixelPanel}">
                                 <StackPanel Margin="16">
                                     <TextBlock Text="{DynamicResource L_SettingsTitle}"
+                                               FontFamily="{StaticResource DisplayFont}"
                                                FontSize="16"
                                                FontWeight="Bold"
                                                Foreground="{StaticResource InkDarkBrush}"
                                                Margin="0,0,0,12"/>
 
                                     <TextBlock Text="{DynamicResource L_InputDevice}"
-                                               FontSize="12"
+                                               FontSize="13"
                                                Foreground="{StaticResource InkSoftBrush}"
                                                Margin="0,0,0,6"/>
                                     <ComboBox x:Name="DeviceCombo"
@@ -314,7 +327,7 @@
                                               Margin="0,0,0,12"/>
 
                                     <TextBlock Text="{DynamicResource L_OutputFormat}"
-                                               FontSize="12"
+                                               FontSize="13"
                                                Foreground="{StaticResource InkSoftBrush}"
                                                Margin="0,0,0,6"/>
                                     <Grid Margin="0,0,0,8">
@@ -362,7 +375,7 @@
                                     </Grid>
                                     <TextBlock x:Name="BitrateLabel"
                                                Text="{DynamicResource L_Mp3Quality}"
-                                               FontSize="11"
+                                               FontSize="12"
                                                Foreground="{StaticResource InkSoftBrush}"
                                                Margin="0,0,0,4"
                                                Visibility="Collapsed"/>
@@ -398,7 +411,7 @@
                                     </Grid>
 
                                     <TextBlock Text="{DynamicResource L_InputLevel}"
-                                               FontSize="12"
+                                               FontSize="13"
                                                Foreground="{StaticResource InkSoftBrush}"
                                                Margin="0,0,0,6"/>
                                     <Border Background="{StaticResource CreamBrush}"
@@ -421,7 +434,7 @@
                                     </Border>
 
                                     <TextBlock Text="{DynamicResource L_SaveFolder}"
-                                               FontSize="12"
+                                               FontSize="13"
                                                Foreground="{StaticResource InkSoftBrush}"
                                                Margin="0,12,0,6"/>
                                     <Grid>
@@ -438,7 +451,7 @@
                                                 SnapsToDevicePixels="True">
                                             <TextBlock x:Name="FolderText"
                                                        Text="..."
-                                                       FontSize="12"
+                                                       FontSize="13"
                                                        Foreground="{StaticResource InkDarkBrush}"
                                                        TextTrimming="CharacterEllipsis"
                                                        VerticalAlignment="Center"/>
@@ -466,6 +479,7 @@
                                     </Grid.RowDefinitions>
                                     <Grid Grid.Row="0">
                                         <TextBlock Text="{DynamicResource L_MascotName}"
+                                                   FontFamily="{StaticResource DisplayFont}"
                                                    FontSize="14"
                                                    FontWeight="Bold"
                                                    Foreground="{StaticResource InkDarkBrush}"
@@ -534,7 +548,7 @@
                                 <Border Grid.Row="0"
                                         Background="{StaticResource CreamBrush}"
                                         BorderBrush="{StaticResource InkDarkBrush}"
-                                        BorderThickness="0,0,0,3"
+                                        BorderThickness="0,0,0,2"
                                         Padding="16,10">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -551,6 +565,7 @@
                                                    Margin="0,0,8,0"/>
                                         <TextBlock Grid.Column="1"
                                                    Text="{DynamicResource L_LibraryTitle}"
+                                                   FontFamily="{StaticResource DisplayFont}"
                                                    FontSize="16"
                                                    FontWeight="Bold"
                                                    Foreground="{StaticResource InkDarkBrush}"
@@ -564,7 +579,7 @@
                                         <TextBlock Grid.Column="4"
                                                    x:Name="LibraryFolderHint"
                                                    Text=""
-                                                   FontSize="11"
+                                                   FontSize="12"
                                                    Foreground="{StaticResource InkSoftBrush}"
                                                    VerticalAlignment="Center"
                                                    TextTrimming="CharacterEllipsis"/>
@@ -674,7 +689,7 @@
                                                                 </TextBox>
                                                             </Grid>
                                                             <TextBlock Text="{Binding Meta}"
-                                                                       FontSize="11"
+                                                                       FontSize="12"
                                                                        Foreground="{StaticResource InkSoftBrush}"
                                                                        Margin="0,2,0,0"/>
                                                         </StackPanel>
@@ -778,7 +793,7 @@
                                                HorizontalAlignment="Center"
                                                Margin="0,12,0,2"/>
                                     <TextBlock Text="{DynamicResource L_EmptyHint}"
-                                               FontSize="11"
+                                               FontSize="12"
                                                Foreground="{StaticResource InkSoftBrush}"
                                                HorizontalAlignment="Center"
                                                Opacity="0.7"/>

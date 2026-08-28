@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -14,11 +15,15 @@ using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using IOPath = System.IO.Path;
 
-namespace Reccoo;
+namespace CocoaRecorder;
 
 public partial class MainWindow : Window
 {
+    private const string ProductFolderName = "Cocoa Recorder";
+    private const string LegacyProductFolderName = "Reccoo";
+
     private readonly AudioRecorder _recorder = new();
+    private readonly AppPreferences _preferences = AppPreferences.Load();
     private string _saveFolder = string.Empty;
 
     private readonly DispatcherTimer _uiTimer;
@@ -46,9 +51,11 @@ public partial class MainWindow : Window
         UpdateLangToggle();
         L10n.LanguageChanged += OnLanguageChanged;
 
-        _saveFolder = IOPath.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
-            "Reccoo");
+        CountdownToggle.IsChecked = _preferences.CountdownEnabled;
+        CountdownToggle.Checked += CountdownToggle_Changed;
+        CountdownToggle.Unchecked += CountdownToggle_Changed;
+
+        _saveFolder = ResolveInitialSaveFolder();
         Directory.CreateDirectory(_saveFolder);
         FolderText.Text = _saveFolder;
         LibraryFolderHint.Text = _saveFolder;
@@ -147,6 +154,21 @@ public partial class MainWindow : Window
         {
             MascotSpeech.Text = $"{L10n.T("MsgFolderOpenFail")}\n{ex.Message}";
         }
+    }
+
+    private string ResolveInitialSaveFolder()
+    {
+        if (!string.IsNullOrWhiteSpace(_preferences.SaveFolder))
+            return _preferences.SaveFolder;
+
+        var musicFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
+        var cocoaFolder = IOPath.Combine(musicFolder, ProductFolderName);
+        var legacyFolder = IOPath.Combine(musicFolder, LegacyProductFolderName);
+
+        // Existing users keep seeing their library without moving any files.
+        return !Directory.Exists(cocoaFolder) && Directory.Exists(legacyFolder)
+            ? legacyFolder
+            : cocoaFolder;
     }
 
     private bool _closeAfterStop;
@@ -252,6 +274,8 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog() == true)
         {
             _saveFolder = dialog.FolderName;
+            _preferences.SaveFolder = _saveFolder;
+            _preferences.Save();
             FolderText.Text = _saveFolder;
             LibraryFolderHint.Text = _saveFolder;
             RefreshRecordings();
@@ -272,6 +296,12 @@ public partial class MainWindow : Window
         else if (HiToggle.IsChecked == true) _recorder.Mp3Quality = Mp3Quality.High;
         else _recorder.Mp3Quality = Mp3Quality.Medium;
         UpdateFormatInfo();
+    }
+
+    private void CountdownToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        _preferences.CountdownEnabled = CountdownToggle.IsChecked == true;
+        _preferences.Save();
     }
 
     private void UpdateFormatInfo()
@@ -356,7 +386,10 @@ public partial class MainWindow : Window
             MascotSpeech.Text = L10n.T("MsgPickDevice");
             return;
         }
-        BeginCountdown(3);
+        if (CountdownToggle.IsChecked == true)
+            BeginCountdown(3);
+        else
+            ActuallyStartRecording();
     }
 
     private void BeginCountdown(int from)
@@ -366,6 +399,7 @@ public partial class MainWindow : Window
         WavToggle.IsEnabled = false;
         Mp3Toggle.IsEnabled = false;
         RecordButton.IsEnabled = false;
+        CountdownToggle.IsEnabled = false;
         StopButton.IsEnabled = true; // Lets the user cancel mid-count via the stop button or Space.
         PauseButton.Visibility = Visibility.Collapsed;
 
@@ -429,7 +463,7 @@ public partial class MainWindow : Window
 
         var format = Mp3Toggle.IsChecked == true ? RecordingFormat.Mp3 : RecordingFormat.Wav;
         var ext = format == RecordingFormat.Mp3 ? "mp3" : "wav";
-        var filename = $"Reccoo_{DateTime.Now:yyyyMMdd_HHmmss}.{ext}";
+        var filename = $"CocoaRecorder_{DateTime.Now:yyyyMMdd_HHmmss}.{ext}";
         var fullPath = IOPath.Combine(_saveFolder, filename);
 
         try
@@ -487,6 +521,7 @@ public partial class MainWindow : Window
         MedToggle.IsEnabled = !recording;
         HiToggle.IsEnabled = !recording;
         RecordButton.IsEnabled = !recording;
+        CountdownToggle.IsEnabled = !recording;
         StopButton.IsEnabled = recording;
         PauseButton.IsEnabled = recording;
         PauseButton.Visibility = recording ? Visibility.Visible : Visibility.Collapsed;
@@ -984,6 +1019,52 @@ public partial class MainWindow : Window
     }
 
     private void DrawMascot(MascotMood mood) => Mascot.Draw(MascotCanvas, mood);
+
+    private sealed class AppPreferences
+    {
+        private static readonly string SettingsPath = IOPath.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "CocoaRecorder",
+            "settings.json");
+
+        public bool CountdownEnabled { get; set; } = true;
+        public string? SaveFolder { get; set; }
+
+        public AppPreferences()
+        {
+        }
+
+        public static AppPreferences Load()
+        {
+            try
+            {
+                if (!File.Exists(SettingsPath)) return new AppPreferences();
+                return JsonSerializer.Deserialize<AppPreferences>(File.ReadAllText(SettingsPath))
+                       ?? new AppPreferences();
+            }
+            catch
+            {
+                return new AppPreferences();
+            }
+        }
+
+        public void Save()
+        {
+            try
+            {
+                var directory = IOPath.GetDirectoryName(SettingsPath);
+                if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
+                File.WriteAllText(SettingsPath, JsonSerializer.Serialize(this, new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                }));
+            }
+            catch
+            {
+                // Preferences should never prevent recording.
+            }
+        }
+    }
 }
 
 public class WaveformBar : INotifyPropertyChanged
