@@ -289,11 +289,11 @@
                 <Setter Property="FontWeight" Value="SemiBold"/>
             </Style>
 
-            <!-- 카운트다운 선택 — WAV|MP3, KOR|EN과 같은 세그먼티드 컨트롤 어휘를 쓴다. -->
-            <Style x:Key="CountdownSegment" TargetType="RadioButton" BasedOn="{StaticResource FormatToggle}">
+            <!-- 카운트다운 스테퍼의 − / + — 보관함 재생·삭제와 같은 픽셀 아이콘 버튼을 쓴다. -->
+            <Style x:Key="CountdownStepButton" TargetType="Button" BasedOn="{StaticResource PixelIconButton}">
+                <Setter Property="Width" Value="30"/>
                 <Setter Property="Height" Value="30"/>
-                <Setter Property="FontSize" Value="13"/>
-                <Setter Property="MinWidth" Value="66"/>
+                <Setter Property="FocusVisualStyle" Value="{StaticResource PixelFocusVisual}"/>
             </Style>
 
             <!-- ============================================================

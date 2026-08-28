@@ -288,21 +288,47 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0"
                                                 Orientation="Horizontal"
-                                                VerticalAlignment="Center">
-                                        <RadioButton x:Name="CountdownOnToggle"
-                                                     Style="{StaticResource CountdownSegment}"
-                                                     GroupName="Countdown"
-                                                     Content="{DynamicResource L_CountdownOn}"
-                                                     ToolTip="{DynamicResource L_CountdownHint}"
-                                                     ToolTipService.ShowOnDisabled="True"
-                                                     Checked="Countdown_Checked"/>
-                                        <RadioButton x:Name="CountdownOffToggle"
-                                                     Style="{StaticResource CountdownSegment}"
-                                                     GroupName="Countdown"
-                                                     Content="{DynamicResource L_CountdownOff}"
-                                                     ToolTip="{DynamicResource L_CountdownHint}"
-                                                     ToolTipService.ShowOnDisabled="True"
-                                                     Checked="Countdown_Checked"/>
+                                                VerticalAlignment="Center"
+                                                ToolTip="{DynamicResource L_CountdownHint}"
+                                                ToolTipService.ShowOnDisabled="True">
+                                        <Button x:Name="CountdownDownButton"
+                                                Style="{StaticResource CountdownStepButton}"
+                                                Click="CountdownDown_Click">
+                                            <Border Width="12" Height="3"
+                                                    Background="{StaticResource InkDarkBrush}"
+                                                    SnapsToDevicePixels="True"/>
+                                        </Button>
+                                        <Border x:Name="CountdownValueBox"
+                                                MinWidth="66" Height="30"
+                                                BorderBrush="{StaticResource InkDarkBrush}"
+                                                BorderThickness="2"
+                                                Margin="4,0"
+                                                SnapsToDevicePixels="True">
+                                            <Grid>
+                                                <Rectangle Fill="#80FFFFFF" Height="2" VerticalAlignment="Top"/>
+                                                <Rectangle x:Name="CountdownValueStripe" Height="3" VerticalAlignment="Bottom"/>
+                                                <TextBlock x:Name="CountdownValueText"
+                                                           FontFamily="{StaticResource DisplayFont}"
+                                                           FontSize="13"
+                                                           FontWeight="Bold"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                        <Button x:Name="CountdownUpButton"
+                                                Style="{StaticResource CountdownStepButton}"
+                                                Click="CountdownUp_Click">
+                                            <Grid Width="12" Height="12">
+                                                <Border Width="12" Height="3"
+                                                        Background="{StaticResource InkDarkBrush}"
+                                                        VerticalAlignment="Center"
+                                                        SnapsToDevicePixels="True"/>
+                                                <Border Width="3" Height="12"
+                                                        Background="{StaticResource InkDarkBrush}"
+                                                        HorizontalAlignment="Center"
+                                                        SnapsToDevicePixels="True"/>
+                                            </Grid>
+                                        </Button>
                                     </StackPanel>
                                     <TextBlock Grid.Column="2"
                                                Text="{DynamicResource L_ShortcutHint}"

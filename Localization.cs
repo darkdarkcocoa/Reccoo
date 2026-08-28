@@ -67,10 +67,10 @@ public static class L10n
         ["PauseBtn"]        = ("일시정지", "Pause"),
         ["ResumeBtn"]       = ("재개", "Resume"),
         ["StopBtn"]         = ("정지", "Stop"),
-        ["CountdownOn"]     = ("3초 후", "3 sec"),
-        ["CountdownOff"]    = ("바로", "Instant"),
-        ["CountdownHint"]   = ("'바로'를 고르면 버튼을 누르는 즉시 녹음해요",
-                               "Pick Instant to start recording the moment you press Record"),
+        ["CountdownUnit"]   = ("{0}초", "{0} sec"),
+        ["CountdownZero"]   = ("바로", "Instant"),
+        ["CountdownHint"]   = ("녹음이 시작되기까지 기다릴 시간이에요. 0으로 두면 누르는 즉시 녹음해요",
+                               "How long to wait before recording starts — at 0 it records the moment you press Record"),
         ["ShortcutHint"]    = ("Space 시작/정지 · P 일시정지 · Ctrl+O 폴더",
                                "Space start/stop · P pause · Ctrl+O folder"),
 
@@ -99,6 +99,7 @@ public static class L10n
         ["Count3"]          = ("셋!", "Three!"),
         ["Count2"]          = ("둘!", "Two!"),
         ["Count1"]          = ("하나!", "One!"),
+        ["CountWait"]       = ("준비하고 있어~", "Getting ready~"),
 
         // 마스코트 안내/오류 대사
         ["MsgClosing"]      = ("마무리 중...\n잠깐만!", "Wrapping up...\njust a sec!"),

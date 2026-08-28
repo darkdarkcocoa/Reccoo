@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -24,7 +25,6 @@ public partial class MainWindow : Window
 
     private readonly AudioRecorder _recorder = new();
     private readonly AppPreferences _preferences = AppPreferences.Load();
-    private bool _preferencesReady;
     private string _saveFolder = string.Empty;
 
     private readonly DispatcherTimer _uiTimer;
@@ -52,9 +52,7 @@ public partial class MainWindow : Window
         UpdateLangToggle();
         L10n.LanguageChanged += OnLanguageChanged;
 
-        CountdownOnToggle.IsChecked = _preferences.CountdownEnabled;
-        CountdownOffToggle.IsChecked = !_preferences.CountdownEnabled;
-        _preferencesReady = true;
+        UpdateCountdownVisual();
 
         _saveFolder = ResolveInitialSaveFolder();
         Directory.CreateDirectory(_saveFolder);
@@ -259,6 +257,7 @@ public partial class MainWindow : Window
             MascotSpeech.Text = Pick(L10n.IdleMessages);
         }
 
+        UpdateCountdownVisual(); // "3초" / "3 sec" 는 코드가 조립하므로 직접 다시 그린다
         UpdateFormatInfo();
         RefreshRecordings(); // 카드 Meta의 날짜 표기 언어 갱신
     }
@@ -303,12 +302,32 @@ public partial class MainWindow : Window
         UpdateFormatInfo();
     }
 
-    private void Countdown_Checked(object sender, RoutedEventArgs e)
+    private void CountdownDown_Click(object sender, RoutedEventArgs e) => StepCountdown(-1);
+    private void CountdownUp_Click(object sender, RoutedEventArgs e) => StepCountdown(+1);
+
+    private void StepCountdown(int delta)
     {
-        // Fires once while XAML loads, before the stored value is applied — ignore that one.
-        if (!_preferencesReady) return;
-        _preferences.CountdownEnabled = CountdownOnToggle.IsChecked == true;
+        var next = Math.Clamp(_preferences.CountdownSeconds + delta, 0, AppPreferences.MaxCountdownSeconds);
+        if (next == _preferences.CountdownSeconds) return;
+        _preferences.CountdownSeconds = next;
         _preferences.Save();
+        UpdateCountdownVisual();
+    }
+
+    private void UpdateCountdownVisual()
+    {
+        int seconds = _preferences.CountdownSeconds;
+        CountdownValueText.Text = seconds == 0
+            ? L10n.T("CountdownZero")
+            : string.Format(L10n.T("CountdownUnit"), seconds);
+
+        // 0초는 카운트다운이 없는 상태다. 선택되지 않은 세그먼트와 같은 무게로 낮춰 둔다.
+        bool off = seconds == 0;
+        CountdownValueBox.Background = (Brush)FindResource(off ? "PaperBrush" : "LilacBrush");
+        CountdownValueStripe.Fill = (Brush)FindResource(off ? "CreamDeepBrush" : "LilacDeepBrush");
+        CountdownValueText.Foreground = (Brush)FindResource(off ? "InkSoftBrush" : "InkDarkBrush");
+
+        SetCountdownChoiceEnabled(!_recorder.IsRecording && _countdownTimer == null);
     }
 
     private void UpdateFormatInfo()
@@ -393,8 +412,8 @@ public partial class MainWindow : Window
             MascotSpeech.Text = L10n.T("MsgPickDevice");
             return;
         }
-        if (CountdownOnToggle.IsChecked == true)
-            BeginCountdown(3);
+        if (_preferences.CountdownSeconds > 0)
+            BeginCountdown(_preferences.CountdownSeconds);
         else
             ActuallyStartRecording();
     }
@@ -446,7 +465,7 @@ public partial class MainWindow : Window
             3 => L10n.T("Count3"),
             2 => L10n.T("Count2"),
             1 => L10n.T("Count1"),
-            _ => "..."
+            _ => L10n.T("CountWait")
         };
     }
 
@@ -556,8 +575,8 @@ public partial class MainWindow : Window
 
     private void SetCountdownChoiceEnabled(bool enabled)
     {
-        CountdownOnToggle.IsEnabled = enabled;
-        CountdownOffToggle.IsEnabled = enabled;
+        CountdownDownButton.IsEnabled = enabled && _preferences.CountdownSeconds > 0;
+        CountdownUpButton.IsEnabled = enabled && _preferences.CountdownSeconds < AppPreferences.MaxCountdownSeconds;
     }
 
     private void UpdateStatusDot()
@@ -1040,7 +1059,15 @@ public partial class MainWindow : Window
             "CocoaRecorder",
             "settings.json");
 
-        public bool CountdownEnabled { get; set; } = true;
+        public const int DefaultCountdownSeconds = 3;
+        public const int MaxCountdownSeconds = 10;
+
+        public int CountdownSeconds { get; set; } = DefaultCountdownSeconds;
+
+        /// <summary>카운트다운 길이를 고를 수 없던 버전이 쓰던 값. 한 번 옮겨 담고 나면 더 쓰지 않는다.</summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? CountdownEnabled { get; set; }
+
         public string? SaveFolder { get; set; }
 
         public AppPreferences()
@@ -1052,8 +1079,15 @@ public partial class MainWindow : Window
             try
             {
                 if (!File.Exists(SettingsPath)) return new AppPreferences();
-                return JsonSerializer.Deserialize<AppPreferences>(File.ReadAllText(SettingsPath))
-                       ?? new AppPreferences();
+                var loaded = JsonSerializer.Deserialize<AppPreferences>(File.ReadAllText(SettingsPath))
+                             ?? new AppPreferences();
+                if (loaded.CountdownEnabled is bool wasEnabled)
+                {
+                    loaded.CountdownSeconds = wasEnabled ? DefaultCountdownSeconds : 0;
+                    loaded.CountdownEnabled = null;
+                }
+                loaded.CountdownSeconds = Math.Clamp(loaded.CountdownSeconds, 0, MaxCountdownSeconds);
+                return loaded;
             }
             catch
             {

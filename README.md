@@ -48,7 +48,7 @@ Full changelogs are on the [Releases page](https://github.com/darkdarkcocoa/coco
 **🎙️ Recording**
 
 - **System audio capture** — records whatever comes out of your speakers, losslessly (WASAPI loopback)
-- **Optional 3-second countdown** — keep it for precise timing or switch it off for instant recording
+- **Adjustable countdown** — set 0–10 seconds of lead-in before recording starts. Leave it at 0 to record the moment you press the button, or stretch it to give yourself time to switch windows
 - **Pause / resume** — skip ads or unwanted sections and pick up where you left off
 - **WAV / MP3 toggle** — keep the original as WAV, or save space with MP3 (LO / MED / HI quality)
 
