@@ -7,7 +7,7 @@ Thanks for your interest in Cocoa Recorder! Bug reports, feature ideas, and PRs 
 
 ## 🐛 버그 신고 & 기능 제안 / Issues
 
-- [Issues](https://github.com/darkdarkcocoa/Reccoo/issues)에 자유롭게 올려 주세요. 한국어와 영어 모두 괜찮습니다.
+- [Issues](https://github.com/darkdarkcocoa/cocoa-recorder/issues)에 자유롭게 올려 주세요. 한국어와 영어 모두 괜찮습니다.
 - 버그라면 **재현 방법**과 **Windows 버전**을 함께 적어 주시면 큰 도움이 됩니다.
 - Feel free to file issues in Korean or English. For bugs, please include repro steps and your Windows version.
 

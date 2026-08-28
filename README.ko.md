@@ -16,7 +16,7 @@
 ![WPF](https://img.shields.io/badge/UI-WPF-1f6feb?style=flat-square)
 ![Windows](https://img.shields.io/badge/OS-Windows-0078D4?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-success?style=flat-square)
-[![Latest release](https://img.shields.io/github/v/release/darkdarkcocoa/Reccoo?style=flat-square&color=f5a598)](https://github.com/darkdarkcocoa/Reccoo/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/darkdarkcocoa/cocoa-recorder?style=flat-square&color=f5a598)](https://github.com/darkdarkcocoa/cocoa-recorder/releases/latest)
 
 ---
 
@@ -36,12 +36,12 @@
 ## ⬇️ 다운로드
 내려받아 더블클릭하면 바로 실행됩니다. 별도의 설치 과정이나 .NET 런타임 설치가 필요하지 않습니다.
 
-> **[📦 최신 Windows 릴리스 다운로드](https://github.com/darkdarkcocoa/Reccoo/releases/latest)** — `CocoaRecorder.exe`를 받으세요. 이름 변경 전 릴리스의 파일명은 `Reccoo.exe`입니다.
-> ([![최신 버전](https://img.shields.io/github/v/release/darkdarkcocoa/Reccoo?style=flat-square&label=%EC%B5%9C%EC%8B%A0%20%EB%B2%84%EC%A0%84&color=b9e4c9)](https://github.com/darkdarkcocoa/Reccoo/releases/latest) · 릴리스 시점: [![릴리스 날짜](https://img.shields.io/github/release-date/darkdarkcocoa/Reccoo?style=flat-square&label=&color=ffd97a)](https://github.com/darkdarkcocoa/Reccoo/releases/latest))
+> **[📦 최신 Windows 릴리스 다운로드](https://github.com/darkdarkcocoa/cocoa-recorder/releases/latest)** — `CocoaRecorder.exe`를 받으세요. 이름 변경 전 릴리스의 파일명은 `Reccoo.exe`입니다.
+> ([![최신 버전](https://img.shields.io/github/v/release/darkdarkcocoa/cocoa-recorder?style=flat-square&label=%EC%B5%9C%EC%8B%A0%20%EB%B2%84%EC%A0%84&color=b9e4c9)](https://github.com/darkdarkcocoa/cocoa-recorder/releases/latest) · 릴리스 시점: [![릴리스 날짜](https://img.shields.io/github/release-date/darkdarkcocoa/cocoa-recorder?style=flat-square&label=&color=ffd97a)](https://github.com/darkdarkcocoa/cocoa-recorder/releases/latest))
 >
 > .NET 런타임이 포함된 단일 실행 파일입니다. 처음 실행할 때 SmartScreen이 "알 수 없는 앱" 경고를 표시할 수 있는데, 아직 코드 서명 인증서를 적용하지 않았기 때문입니다. **"추가 정보" → "실행"**을 누르면 정상적으로 사용할 수 있습니다.
 
-버전별 변경 내역은 [Releases 페이지](https://github.com/darkdarkcocoa/Reccoo/releases)에서 확인할 수 있습니다.
+버전별 변경 내역은 [Releases 페이지](https://github.com/darkdarkcocoa/cocoa-recorder/releases)에서 확인할 수 있습니다.
 
 ---
 
@@ -91,8 +91,8 @@
 [.NET 9 SDK](https://dotnet.microsoft.com/download)와 Windows 10/11만 있으면 됩니다.
 
 ```powershell
-git clone https://github.com/darkdarkcocoa/Reccoo.git
-cd Reccoo
+git clone https://github.com/darkdarkcocoa/cocoa-recorder.git
+cd cocoa-recorder
 dotnet run
 ```
 
@@ -111,7 +111,7 @@ dotnet build -c Release
 구조는 의도적으로 단순하게 유지하고 있습니다. 프레임워크 없이 소스 파일 몇 개가 전부입니다.
 
 ```
-Reccoo/
+cocoa-recorder/
 ├── App.xaml                  # 픽셀 테마 ResourceDictionary (팔레트 + 컨트롤 스타일)
 ├── App.xaml.cs
 ├── MainWindow.xaml           # 1216×736 메인 레이아웃

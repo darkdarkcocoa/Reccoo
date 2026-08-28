@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-Cocoa Recorder (GitHub repository `darkdarkcocoa/Reccoo`) is a Windows-only, single-window WPF application targeting `net9.0-windows`. The project intentionally uses a flat structure:
+Cocoa Recorder (GitHub repository `darkdarkcocoa/cocoa-recorder`) is a Windows-only, single-window WPF application targeting `net9.0-windows`. The project intentionally uses a flat structure:
 
 - `MainWindow.xaml` and `MainWindow.xaml.cs` contain the UI and interaction logic.
 - `AudioRecorder.cs` handles loopback capture and WAV/MP3 output through NAudio.

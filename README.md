@@ -13,7 +13,7 @@ Cocoa Recorder (formerly Reccoo) is a small recorder that captures whatever your
 ![WPF](https://img.shields.io/badge/UI-WPF-1f6feb?style=flat-square)
 ![Windows](https://img.shields.io/badge/OS-Windows-0078D4?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-success?style=flat-square)
-[![Latest release](https://img.shields.io/github/v/release/darkdarkcocoa/Reccoo?style=flat-square&color=f5a598)](https://github.com/darkdarkcocoa/Reccoo/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/darkdarkcocoa/cocoa-recorder?style=flat-square&color=f5a598)](https://github.com/darkdarkcocoa/cocoa-recorder/releases/latest)
 
 ---
 
@@ -34,12 +34,12 @@ Interested in adding another language? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Download, double-click, done. No installer, no separate .NET runtime required.
 
-> **[📦 Get the latest Windows release](https://github.com/darkdarkcocoa/Reccoo/releases/latest)** — download `CocoaRecorder.exe` (`Reccoo.exe` on releases before the rename)
-> ([![Latest version](https://img.shields.io/github/v/release/darkdarkcocoa/Reccoo?style=flat-square&label=latest&color=b9e4c9)](https://github.com/darkdarkcocoa/Reccoo/releases/latest) [![Release date](https://img.shields.io/github/release-date/darkdarkcocoa/Reccoo?style=flat-square&label=released&color=ffd97a)](https://github.com/darkdarkcocoa/Reccoo/releases/latest))
+> **[📦 Get the latest Windows release](https://github.com/darkdarkcocoa/cocoa-recorder/releases/latest)** — download `CocoaRecorder.exe` (`Reccoo.exe` on releases before the rename)
+> ([![Latest version](https://img.shields.io/github/v/release/darkdarkcocoa/cocoa-recorder?style=flat-square&label=latest&color=b9e4c9)](https://github.com/darkdarkcocoa/cocoa-recorder/releases/latest) [![Release date](https://img.shields.io/github/release-date/darkdarkcocoa/cocoa-recorder?style=flat-square&label=released&color=ffd97a)](https://github.com/darkdarkcocoa/cocoa-recorder/releases/latest))
 >
 > It is a self-contained single-file executable with the .NET runtime bundled in. On first launch, SmartScreen may warn about an "unrecognized app" — this is because the binary is not code-signed yet. Click **"More info" → "Run anyway"** to start it.
 
-Full changelogs are on the [Releases page](https://github.com/darkdarkcocoa/Reccoo/releases).
+Full changelogs are on the [Releases page](https://github.com/darkdarkcocoa/cocoa-recorder/releases).
 
 ---
 
@@ -91,8 +91,8 @@ Because it records the audio signal directly through **WASAPI loopback** (no mic
 All you need is the [.NET 9 SDK](https://dotnet.microsoft.com/download) and Windows 10/11.
 
 ```powershell
-git clone https://github.com/darkdarkcocoa/Reccoo.git
-cd Reccoo
+git clone https://github.com/darkdarkcocoa/cocoa-recorder.git
+cd cocoa-recorder
 dotnet run
 ```
 
@@ -112,7 +112,7 @@ Audio is captured from the default output device. New installs save files to `Mu
 The structure is intentionally simple — just a handful of source files, no frameworks.
 
 ```
-Reccoo/
+cocoa-recorder/
 ├── App.xaml                  # Pixel theme ResourceDictionary (palette + control styles)
 ├── App.xaml.cs
 ├── MainWindow.xaml           # 1216×736 main layout

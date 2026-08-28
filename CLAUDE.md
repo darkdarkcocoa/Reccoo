@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Cocoa Recorder (GitHub repository `darkdarkcocoa/Reccoo`) is a single-window WPF desktop app for Windows that records the system audio output (loopback) and saves it as WAV or MP3, wrapped in a pixel-art UI. Target framework is `net9.0-windows`; the project does not build on non-Windows platforms.
+Cocoa Recorder (GitHub repository `darkdarkcocoa/cocoa-recorder`) is a single-window WPF desktop app for Windows that records the system audio output (loopback) and saves it as WAV or MP3, wrapped in a pixel-art UI. Target framework is `net9.0-windows`; the project does not build on non-Windows platforms.
 
 ## Commands
 
