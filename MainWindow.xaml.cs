@@ -177,15 +177,22 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>하고 싶은 말이 있을 때 갈 곳 — 새 이슈 작성 화면을 바로 연다.</summary>
-    private const string FeedbackUrl = "https://github.com/darkdarkcocoa/cocoa-recorder/issues/new";
+    private const string RepoUrl = "https://github.com/darkdarkcocoa/cocoa-recorder";
 
+    /// <summary>하고 싶은 말이 있을 때 갈 곳 — 새 이슈 작성 화면을 바로 연다.</summary>
     private void Feedback_Click(object sender, RoutedEventArgs e)
+        => OpenLink(RepoUrl + "/issues/new", "MsgFeedback");
+
+    /// <summary>앱이 만들어진 곳.</summary>
+    private void Github_Click(object sender, RoutedEventArgs e)
+        => OpenLink(RepoUrl, "MsgGithub");
+
+    private void OpenLink(string url, string speechKey)
     {
         try
         {
-            Process.Start(new ProcessStartInfo(FeedbackUrl) { UseShellExecute = true });
-            MascotSpeech.Text = L10n.T("MsgFeedback");
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            MascotSpeech.Text = L10n.T(speechKey);
         }
         catch (Exception ex)
         {

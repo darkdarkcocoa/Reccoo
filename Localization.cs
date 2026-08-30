@@ -116,6 +116,8 @@ public static class L10n
         ["Feedback"]        = ("건의하기", "Feedback"),
         ["FeedbackHint"]    = ("GitHub 이슈로 연결돼요 — 바라는 점이나 버그를 남겨 주세요",
                                "Opens a new GitHub issue — tell us what you want or what broke"),
+        ["GithubHint"]      = ("이 앱이 만들어진 곳을 브라우저에서 열어요",
+                               "Opens the repository this app is built in"),
         ["RecentMore"]      = ("그 밖에 {0}개 — 보관함 탭에 전부 있어요", "{0} more — the library tab has them all"),
         ["CardTooltip"]     = ("더블클릭으로 이름 변경 · 끌어서 내보내기", "double-click to rename · drag out to export"),
         ["EmptyTitle"]      = ("아직 테이프가 없어요", "no tapes yet"),
@@ -144,6 +146,7 @@ public static class L10n
         ["MsgRenameFail"]   = ("이름 바꾸기 실패", "Rename failed"),
         ["MsgPlayFail"]     = ("재생 실패ㅠ", "Playback failed :("),
         ["MsgFeedback"]     = ("의견 고마워!\n귀 기울이고 있을게 ♡", "Thanks for telling me!\nI'm listening ♡"),
+        ["MsgGithub"]       = ("내가 만들어진 곳이야!\n구경하고 와 ♡", "That is where I was made!\nGo have a look ♡"),
         ["MsgLinkFail"]     = ("링크를 열지 못했어ㅠ", "Couldn't open the link :("),
         ["MsgDeleteFail"]   = ("삭제 실패ㅠ", "Delete failed :("),
     };

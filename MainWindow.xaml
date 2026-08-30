@@ -840,26 +840,51 @@
                 <!-- ===== 항상 보이는 설정 레일 ===== -->
                 <DockPanel Grid.Column="1" Margin="20,16">
 
-                    <!-- 우체통 한 칸 — 하고 싶은 말이 있을 때 갈 곳 -->
+                    <!-- 앱 바깥으로 나가는 두 갈래 — 하고 싶은 말, 그리고 만들어진 곳 -->
                     <StackPanel DockPanel.Dock="Bottom">
                         <Rectangle Height="2" Fill="{StaticResource LineBrush}" Margin="0,14,0,0"/>
-                        <Button x:Name="FeedbackButton"
-                                Style="{StaticResource FeedbackLink}"
-                                Click="Feedback_Click"
-                                ToolTip="{DynamicResource L_FeedbackHint}"
-                                HorizontalAlignment="Left">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="M 1,1 H 17 V 12 H 1 Z M 1,1 L 9,7 L 17,1"
-                                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                      StrokeThickness="2"
-                                      VerticalAlignment="Center"
-                                      Margin="0,0,10,0"
-                                      SnapsToDevicePixels="True"/>
-                                <TextBlock Text="{DynamicResource L_Feedback}"
-                                           FontSize="13"
-                                           VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
+                        <StackPanel Orientation="Horizontal">
+                            <Button x:Name="FeedbackButton"
+                                    Style="{StaticResource FeedbackLink}"
+                                    Click="Feedback_Click"
+                                    ToolTip="{DynamicResource L_FeedbackHint}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="M 1,1 H 17 V 12 H 1 Z M 1,1 L 9,7 L 17,1"
+                                          Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                          StrokeThickness="2"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,9,0"
+                                          SnapsToDevicePixels="True"/>
+                                    <TextBlock Text="{DynamicResource L_Feedback}"
+                                               FontSize="13"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <TextBlock Text="·"
+                                       FontSize="13"
+                                       Foreground="{StaticResource LineSoftBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="12,0"/>
+
+                            <Button x:Name="GithubButton"
+                                    Style="{StaticResource FeedbackLink}"
+                                    Click="Github_Click"
+                                    ToolTip="{DynamicResource L_GithubHint}">
+                                <StackPanel Orientation="Horizontal">
+                                    <!-- 소스가 있는 곳이라는 뜻의 꺾쇠 한 쌍 -->
+                                    <Path Data="M 6,1 L 1,7 L 6,13 M 12,1 L 17,7 L 12,13"
+                                          Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                          StrokeThickness="2"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,9,0"
+                                          SnapsToDevicePixels="True"/>
+                                    <TextBlock Text="GitHub"
+                                               FontSize="13"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
                     </StackPanel>
 
                     <StackPanel>
