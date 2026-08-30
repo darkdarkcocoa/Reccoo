@@ -41,6 +41,8 @@ Download, double-click, done. No installer, no separate .NET runtime required.
 > **[📦 Get the latest Windows release](https://github.com/darkdarkcocoa/cocoa-recorder/releases/latest)** — download `CocoaRecorder.exe` (`Reccoo.exe` on releases before the rename)
 > ([![Latest version](https://img.shields.io/github/v/release/darkdarkcocoa/cocoa-recorder?style=flat-square&label=latest&color=b9e4c9)](https://github.com/darkdarkcocoa/cocoa-recorder/releases/latest) [![Release date](https://img.shields.io/github/release-date/darkdarkcocoa/cocoa-recorder?style=flat-square&label=released&color=ffd97a)](https://github.com/darkdarkcocoa/cocoa-recorder/releases/latest))
 >
+> Once at launch the app asks GitHub whether a newer release exists and marks the **Updates** link with a **NEW** badge if so — nothing is sent about you, and it never downloads anything by itself. Turn the check off with `"CheckForUpdates": false` in `%LOCALAPPDATA%\CocoaRecorder\settings.json`.
+>
 > It is a self-contained single-file executable with the .NET runtime bundled in. On first launch, SmartScreen may warn about an "unrecognized app" — this is because the binary is not code-signed yet. Click **"More info" → "Run anyway"** to start it.
 
 Full changelogs are on the [Releases page](https://github.com/darkdarkcocoa/cocoa-recorder/releases).

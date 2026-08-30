@@ -2,6 +2,8 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.Json;
@@ -187,6 +189,65 @@ public partial class MainWindow : Window
     private void Github_Click(object sender, RoutedEventArgs e)
         => OpenLink(RepoUrl, "MsgGithub");
 
+    // ---------------------------------------------------------------
+    // 새 버전 알림. 켤 때 한 번만 GitHub 에 물어보고, 실패하면 조용히 넘어간다.
+    // "봤다"는 그때 본 태그로 기억한다 — 그래야 더 새 버전이 올라오면 다시 켜진다.
+    // ---------------------------------------------------------------
+    private static readonly Version AppVersion = Normalize(
+        Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0, 0));
+
+    private string? _latestTag;
+
+    private static Version Normalize(Version v) => new(v.Major, v.Minor, Math.Max(0, v.Build));
+
+    private static bool IsNewer(string tag, Version current)
+        => Version.TryParse(tag.TrimStart('v', 'V'), out var parsed) && Normalize(parsed) > current;
+
+    private async void CheckForUpdate()
+    {
+        if (!_preferences.CheckForUpdates) return;
+        try
+        {
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(6) };
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("CocoaRecorder");
+            http.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+            var json = await http.GetStringAsync("https://api.github.com/repos/darkdarkcocoa/cocoa-recorder/releases/latest");
+
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("tag_name", out var tagNode)) return;
+            var tag = tagNode.GetString();
+            if (string.IsNullOrWhiteSpace(tag) || !IsNewer(tag, AppVersion)) return;
+
+            _latestTag = tag;
+            // 이미 한 번 본 소식이면 다시 켜지 않는다.
+            if (_preferences.SeenReleaseTag == tag) return;
+
+            UpdateText.Foreground = (Brush)FindResource("AmberBrush");
+            UpdateBadge.Visibility = Visibility.Visible;
+            UpdateButton.ToolTip = string.Format(L10n.T("UpdateReady"), tag);
+        }
+        catch
+        {
+            // 네트워크가 없거나 GitHub 이 답하지 않아도 녹음기는 녹음기다.
+        }
+    }
+
+    private void Update_Click(object sender, RoutedEventArgs e)
+    {
+        if (_latestTag is { } tag)
+        {
+            _preferences.SeenReleaseTag = tag;
+            _preferences.Save();
+            UpdateText.ClearValue(TextBlock.ForegroundProperty);
+            UpdateBadge.Visibility = Visibility.Collapsed;
+            OpenLink($"{RepoUrl}/releases/tag/{tag}", "MsgUpdate");
+        }
+        else
+        {
+            OpenLink($"{RepoUrl}/releases", "MsgUpdate");
+        }
+    }
+
     private void OpenLink(string url, string speechKey)
     {
         try
@@ -270,6 +331,8 @@ public partial class MainWindow : Window
         }
 
         ShowTab(TabRecord);
+        UpdateButton.ToolTip = string.Format(L10n.T("UpdateCurrent"), AppVersion);
+        CheckForUpdate();
         UpdateTransport();
         UpdateFormatInfo();
         RefreshRecordings();
@@ -1454,6 +1517,12 @@ public partial class MainWindow : Window
         public bool? CountdownEnabled { get; set; }
 
         public string? SaveFolder { get; set; }
+
+        /// <summary>켤 때 새 버전을 확인할지. 끄면 앱이 바깥으로 나가지 않는다.</summary>
+        public bool CheckForUpdates { get; set; } = true;
+
+        /// <summary>마지막으로 확인한 릴리스 태그. 더 새 것이 올라오면 알림이 다시 켜진다.</summary>
+        public string? SeenReleaseTag { get; set; }
 
         public AppPreferences()
         {

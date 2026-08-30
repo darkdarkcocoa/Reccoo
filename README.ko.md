@@ -36,6 +36,8 @@
 ## ⬇️ 다운로드
 내려받아 더블클릭하면 바로 실행됩니다. 별도의 설치 과정이나 .NET 런타임 설치가 필요하지 않습니다.
 
+> 앱은 켤 때 한 번 GitHub에 새 버전이 있는지 물어보고, 있으면 **업데이트** 링크에 **NEW** 표시를 띄웁니다. 사용자에 대한 정보는 아무것도 보내지 않고, 스스로 무언가를 받아오지도 않습니다. `%LOCALAPPDATA%\CocoaRecorder\settings.json`에서 `"CheckForUpdates": false`로 끌 수 있습니다.
+>
 > **[📦 최신 Windows 릴리스 다운로드](https://github.com/darkdarkcocoa/cocoa-recorder/releases/latest)** — `CocoaRecorder.exe`를 받으세요. 이름 변경 전 릴리스의 파일명은 `Reccoo.exe`입니다.
 > ([![최신 버전](https://img.shields.io/github/v/release/darkdarkcocoa/cocoa-recorder?style=flat-square&label=%EC%B5%9C%EC%8B%A0%20%EB%B2%84%EC%A0%84&color=b9e4c9)](https://github.com/darkdarkcocoa/cocoa-recorder/releases/latest) · 릴리스 시점: [![릴리스 날짜](https://img.shields.io/github/release-date/darkdarkcocoa/cocoa-recorder?style=flat-square&label=&color=ffd97a)](https://github.com/darkdarkcocoa/cocoa-recorder/releases/latest))
 >

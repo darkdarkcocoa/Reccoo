@@ -116,6 +116,10 @@ public static class L10n
         ["Feedback"]        = ("건의하기", "Feedback"),
         ["FeedbackHint"]    = ("GitHub 이슈로 연결돼요 — 바라는 점이나 버그를 남겨 주세요",
                                "Opens a new GitHub issue — tell us what you want or what broke"),
+        ["Update"]          = ("업데이트", "Updates"),
+        ["UpdateCurrent"]   = ("지금 쓰고 계신 버전은 v{0} 이에요", "You are on v{0}"),
+        ["UpdateReady"]     = ("새 버전 {0} 이 나왔어요 — 눌러서 뭐가 바뀌었는지 보세요",
+                               "{0} is out — click to see what changed"),
         ["GithubHint"]      = ("이 앱이 만들어진 곳을 브라우저에서 열어요",
                                "Opens the repository this app is built in"),
         ["RecentMore"]      = ("그 밖에 {0}개 — 보관함 탭에 전부 있어요", "{0} more — the library tab has them all"),
@@ -147,6 +151,7 @@ public static class L10n
         ["MsgPlayFail"]     = ("재생 실패ㅠ", "Playback failed :("),
         ["MsgFeedback"]     = ("의견 고마워!\n귀 기울이고 있을게 ♡", "Thanks for telling me!\nI'm listening ♡"),
         ["MsgGithub"]       = ("내가 만들어진 곳이야!\n구경하고 와 ♡", "That is where I was made!\nGo have a look ♡"),
+        ["MsgUpdate"]       = ("뭐가 바뀌었는지\n보러 가자! ♡", "Let's go see\nwhat changed! ♡"),
         ["MsgLinkFail"]     = ("링크를 열지 못했어ㅠ", "Couldn't open the link :("),
         ["MsgDeleteFail"]   = ("삭제 실패ㅠ", "Delete failed :("),
     };

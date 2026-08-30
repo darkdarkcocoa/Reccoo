@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows</TargetFramework>
+    <Version>2.1.0</Version>
     <AssemblyName>CocoaRecorder</AssemblyName>
     <AssemblyTitle>Cocoa Recorder</AssemblyTitle>
     <Product>Cocoa Recorder</Product>

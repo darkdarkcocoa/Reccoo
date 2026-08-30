@@ -885,6 +885,38 @@
                                 </StackPanel>
                             </Button>
                         </StackPanel>
+
+                        <!-- 새 버전이 있고 아직 안 본 것이면 앰버로 켜지고 NEW 가 붙는다 -->
+                        <Button x:Name="UpdateButton"
+                                Style="{StaticResource FeedbackLink}"
+                                Click="Update_Click"
+                                HorizontalAlignment="Left"
+                                Padding="2,4">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="M 9,1 V 9 M 5,5.5 L 9,10 L 13,5.5 M 1,12 H 17"
+                                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                      StrokeThickness="2"
+                                      VerticalAlignment="Center"
+                                      Margin="0,0,9,0"
+                                      SnapsToDevicePixels="True"/>
+                                <TextBlock x:Name="UpdateText"
+                                           Text="{DynamicResource L_Update}"
+                                           FontSize="13"
+                                           VerticalAlignment="Center"/>
+                                <Border x:Name="UpdateBadge"
+                                        Background="{StaticResource AmberBrush}"
+                                        Padding="6,1"
+                                        Margin="9,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Visibility="Collapsed"
+                                        SnapsToDevicePixels="True">
+                                    <TextBlock Text="NEW"
+                                               FontFamily="{StaticResource DisplayFont}"
+                                               FontSize="10"
+                                               Foreground="{StaticResource NightBrush}"/>
+                                </Border>
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
 
                     <StackPanel>
