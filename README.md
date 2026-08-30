@@ -172,6 +172,8 @@ cat-fur    #B9B1E6      pink-soft  #FF8FB8
 
 Contributions are always welcome! Feel free to open an issue or submit a pull request for bug fixes, improvements, or new ideas. For substantial changes, please open an issue first so we can discuss the direction together. See [CONTRIBUTING.md](CONTRIBUTING.md) for the project conventions.
 
+You can also reach us **from inside the app** — the envelope at the bottom of the settings rail opens a new issue for you.
+
 ---
 
 ## 📜 License

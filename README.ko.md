@@ -165,6 +165,8 @@ cat-fur    #B9B1E6      pink-soft  #FF8FB8
 ## 🤝 기여하기
 기여와 Pull Request는 언제든지 환영합니다! 버그 수정, 기능 개선, 새로운 아이디어를 자유롭게 Issue나 Pull Request로 제안해 주세요. 큰 변경은 먼저 Issue에서 방향을 함께 논의해 주시면 좋습니다. 자세한 원칙은 [CONTRIBUTING.md](CONTRIBUTING.md)를 확인해 주세요.
 
+**앱 안에서도 바로 건의할 수 있습니다.** 설정 레일 맨 아래의 편지 아이콘을 누르면 새 이슈 작성 화면이 열립니다.
+
 ---
 
 ## 📜 라이선스

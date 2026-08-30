@@ -113,6 +113,9 @@ public static class L10n
 
         // 보관함
         ["CountFmt"]        = ("{0}개", "{0} RECORDINGS"),
+        ["Feedback"]        = ("건의하기", "Feedback"),
+        ["FeedbackHint"]    = ("GitHub 이슈로 연결돼요 — 바라는 점이나 버그를 남겨 주세요",
+                               "Opens a new GitHub issue — tell us what you want or what broke"),
         ["RecentMore"]      = ("그 밖에 {0}개 — 보관함 탭에 전부 있어요", "{0} more — the library tab has them all"),
         ["CardTooltip"]     = ("더블클릭으로 이름 변경 · 끌어서 내보내기", "double-click to rename · drag out to export"),
         ["EmptyTitle"]      = ("아직 테이프가 없어요", "no tapes yet"),
@@ -140,6 +143,8 @@ public static class L10n
         ["MsgError"]        = ("오류ㅠ", "Oops, error :("),
         ["MsgRenameFail"]   = ("이름 바꾸기 실패", "Rename failed"),
         ["MsgPlayFail"]     = ("재생 실패ㅠ", "Playback failed :("),
+        ["MsgFeedback"]     = ("의견 고마워!\n귀 기울이고 있을게 ♡", "Thanks for telling me!\nI'm listening ♡"),
+        ["MsgLinkFail"]     = ("링크를 열지 못했어ㅠ", "Couldn't open the link :("),
         ["MsgDeleteFail"]   = ("삭제 실패ㅠ", "Delete failed :("),
     };
 

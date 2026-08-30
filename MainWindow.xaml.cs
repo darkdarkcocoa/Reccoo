@@ -177,6 +177,22 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>하고 싶은 말이 있을 때 갈 곳 — 새 이슈 작성 화면을 바로 연다.</summary>
+    private const string FeedbackUrl = "https://github.com/darkdarkcocoa/cocoa-recorder/issues/new";
+
+    private void Feedback_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(FeedbackUrl) { UseShellExecute = true });
+            MascotSpeech.Text = L10n.T("MsgFeedback");
+        }
+        catch (Exception ex)
+        {
+            MascotSpeech.Text = $"{L10n.T("MsgLinkFail")}\n{ex.Message}";
+        }
+    }
+
     private void OpenSaveFolder()
     {
         try

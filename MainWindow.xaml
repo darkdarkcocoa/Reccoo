@@ -306,6 +306,33 @@
             </Setter>
         </Style>
 
+        <!-- 건의하기 — 레일 맨 아래에 조용히 앉은 링크. 마우스를 올리면 민트로 켜진다. -->
+        <Style x:Key="FeedbackLink" TargetType="Button">
+            <Setter Property="Foreground" Value="{StaticResource MuteBrush}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="2,10"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource PixelFocusVisual}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="Transparent" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource MintBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource CreamBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- 도움말의 단축키 한 줄 -->
         <Style x:Key="KeyCap" TargetType="Border">
             <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/>
@@ -811,7 +838,31 @@
                 </Border>
 
                 <!-- ===== 항상 보이는 설정 레일 ===== -->
-                <StackPanel Grid.Column="1" Margin="20,16">
+                <DockPanel Grid.Column="1" Margin="20,16">
+
+                    <!-- 우체통 한 칸 — 하고 싶은 말이 있을 때 갈 곳 -->
+                    <StackPanel DockPanel.Dock="Bottom">
+                        <Rectangle Height="2" Fill="{StaticResource LineBrush}" Margin="0,14,0,0"/>
+                        <Button x:Name="FeedbackButton"
+                                Style="{StaticResource FeedbackLink}"
+                                Click="Feedback_Click"
+                                ToolTip="{DynamicResource L_FeedbackHint}"
+                                HorizontalAlignment="Left">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="M 1,1 H 17 V 12 H 1 Z M 1,1 L 9,7 L 17,1"
+                                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                      StrokeThickness="2"
+                                      VerticalAlignment="Center"
+                                      Margin="0,0,10,0"
+                                      SnapsToDevicePixels="True"/>
+                                <TextBlock Text="{DynamicResource L_Feedback}"
+                                           FontSize="13"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <StackPanel>
 
                     <TextBlock Text="SOURCE" Style="{StaticResource SectionLabel}"/>
                     <ComboBox x:Name="DeviceCombo" Style="{StaticResource NightComboBox}" Margin="0,0,0,12"
@@ -874,7 +925,8 @@
                             Click="ChangeFolder_Click"
                             HorizontalAlignment="Stretch"
                             Margin="0,8,0,0"/>
-                </StackPanel>
+                    </StackPanel>
+                </DockPanel>
             </Grid>
 
             <!-- ============================================================
