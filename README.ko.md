@@ -12,6 +12,10 @@
 
 ![코코아 레코더 — 한국어 UI](assets/screenshot-ko.png)
 
+<sub>코코아가 네 단계로 직접 설명해 줍니다 — 언제든 F1.</sub>
+
+![코코아 레코더 — 도움말 투어](assets/screenshot-help-ko.png)
+
 ![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square)
 ![WPF](https://img.shields.io/badge/UI-WPF-1f6feb?style=flat-square)
 ![Windows](https://img.shields.io/badge/OS-Windows-0078D4?style=flat-square)
