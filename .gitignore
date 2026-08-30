@@ -69,3 +69,6 @@ $RECYCLE.BIN/
 *.snk
 appsettings.Development.json
 secrets.json
+
+# Claude Design handoff export (scratch, not source)
+*-handoff/

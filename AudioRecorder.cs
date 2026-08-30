@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using NAudio.CoreAudioApi;
 using NAudio.Lame;
@@ -29,6 +29,14 @@ public sealed class AudioRecorder : IDisposable
     public TimeSpan Elapsed => _stopwatch.Elapsed;
     public Mp3Quality Mp3Quality { get; set; } = Mp3Quality.Medium;
 
+    /// <summary>Sample rate of the endpoint being captured, 0 when idle.</summary>
+    public int SampleRate { get; private set; }
+
+    private long _capturedBytes;
+
+    /// <summary>Raw PCM bytes written so far. Display only — the UI shows it as a running size.</summary>
+    public long CapturedBytes => Interlocked.Read(ref _capturedBytes);
+
     public event EventHandler<RecordingFinishedEventArgs>? RecordingFinished;
     public event EventHandler<float>? LevelChanged;
 
@@ -47,6 +55,13 @@ public sealed class AudioRecorder : IDisposable
         return devices;
     }
 
+    /// <summary>엔드포인트의 믹스 포맷 샘플레이트. 읽지 못하면 0 — 히어로 표시에만 쓴다.</summary>
+    public static int TryGetSampleRate(MMDevice device)
+    {
+        try { return device.AudioClient.MixFormat.SampleRate; }
+        catch { return 0; }
+    }
+
     public void Start(MMDevice device, RecordingFormat format, string finalPath)
     {
         if (IsRecording) throw new InvalidOperationException("Already recording.");
@@ -57,6 +72,8 @@ public sealed class AudioRecorder : IDisposable
 
         _capture = new WasapiLoopbackCapture(device);
         _wavWriter = new WaveFileWriter(_tempWavPath, _capture.WaveFormat);
+        SampleRate = _capture.WaveFormat.SampleRate;
+        Interlocked.Exchange(ref _capturedBytes, 0);
         _capture.DataAvailable += OnDataAvailable;
         _capture.RecordingStopped += OnRecordingStopped;
 
@@ -98,6 +115,7 @@ public sealed class AudioRecorder : IDisposable
         if (_stopwatch.ElapsedMilliseconds >= TransientSkipMs)
         {
             _wavWriter?.Write(e.Buffer, 0, e.BytesRecorded);
+            Interlocked.Add(ref _capturedBytes, e.BytesRecorded);
         }
 
         var fmt = _capture?.WaveFormat;

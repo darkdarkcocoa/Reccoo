@@ -1,14 +1,18 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using Microsoft.VisualBasic.FileIO;
 using Microsoft.Win32;
@@ -23,19 +27,36 @@ public partial class MainWindow : Window
     private const string ProductFolderName = "Cocoa Recorder";
     private const string LegacyProductFolderName = "Reccoo";
 
+    /// <summary>밤하늘 난수 seed — 시안과 같은 별자리가 나오도록 고정한다.</summary>
+    private const int SkySeed = 11;
+    private const int MoonCell = 6;
+    private const int CatCell = 5;
+
+    /// <summary>도움말 하늘은 같은 난수식을 다른 씨앗과 비율로 돌려 세로로 길게 뿌린다.</summary>
+    private const int HelpSkySeed = 23;
+    private const int HelpCatCell = 7;
+    private const int HelpStepCount = 4;
+    private int _helpStep;
+
     private readonly AudioRecorder _recorder = new();
     private readonly AppPreferences _preferences = AppPreferences.Load();
     private string _saveFolder = string.Empty;
 
     private readonly DispatcherTimer _uiTimer;
     private readonly DispatcherTimer _waveformTimer;
-    private readonly DispatcherTimer _blinkTimer;
-    private bool _blinkOn = true;
+
+    /// <summary>선택한 장치의 샘플레이트 — 녹음 전에도 히어로에 적어 두기 위해 미리 읽어 둔다.</summary>
+    private int _deviceSampleRate;
 
     private readonly Random _rng = new();
     private readonly ObservableCollection<WaveformBar> _bars = new();
     private readonly ObservableCollection<LevelCell> _levelCells = new();
     private readonly ObservableCollection<RecordingItem> _recordings = new();
+
+    /// <summary>녹음 화면의 "TONIGHT'S TAPES" 는 최근 것만 보여준다. 전체는 보관함 탭이 맡는다.</summary>
+    private readonly ObservableCollection<RecordingItem> _recent = new();
+    private const int RecentCount = 4;
+
     private const int BarCount = 56;
     private const int LevelCellCount = 18;
 
@@ -44,7 +65,15 @@ public partial class MainWindow : Window
     private readonly double[] _peakHistory = new double[BarCount];
     private int _peakWriteIdx;
     private double _smoothedLevel;
-    private double _mascotBobTarget;
+
+    /// <summary>화면이 보여주는 네 가지 상태. 트랜스포트 버튼과 히어로 색이 여기서 갈린다.</summary>
+    private enum Transport { Idle, Countdown, Recording, Paused }
+
+    private Transport State =>
+        _countdownTimer != null ? Transport.Countdown
+        : !_recorder.IsRecording ? Transport.Idle
+        : _recorder.IsPaused ? Transport.Paused
+        : Transport.Recording;
 
     public MainWindow()
     {
@@ -52,33 +81,31 @@ public partial class MainWindow : Window
         UpdateLangToggle();
         L10n.LanguageChanged += OnLanguageChanged;
 
-        UpdateCountdownVisual();
-
         _saveFolder = ResolveInitialSaveFolder();
         Directory.CreateDirectory(_saveFolder);
         FolderText.Text = _saveFolder;
         LibraryFolderHint.Text = _saveFolder;
 
-        var mintFill = (Brush)FindResource("MintDeepBrush");
+        var restBar = (Brush)FindResource("WaveLowBrush");
         for (int i = 0; i < BarCount; i++)
-            _bars.Add(new WaveformBar { Height = 12, Fill = mintFill });
+            _bars.Add(new WaveformBar { Height = 6, Fill = restBar });
         WaveformHost.ItemsSource = _bars;
 
-        var emptyCell = (Brush)FindResource("CreamDeepBrush");
+        var emptyCell = (Brush)FindResource("WellBrush");
         for (int i = 0; i < LevelCellCount; i++)
             _levelCells.Add(new LevelCell { Fill = emptyCell });
         LevelMeter.ItemsSource = _levelCells;
 
         RecordingsList.ItemsSource = _recordings;
+        RecentList.ItemsSource = _recent;
+
+        UpdateCountdownVisual();
 
         _uiTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
-        _uiTimer.Tick += (_, _) => UpdateTimerLabels();
+        _uiTimer.Tick += (_, _) => { UpdateTimerLabels(); UpdateSizeLabel(); };
 
         _waveformTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(60) };
         _waveformTimer.Tick += (_, _) => TickWaveform();
-
-        _blinkTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
-        _blinkTimer.Tick += (_, _) => { _blinkOn = !_blinkOn; UpdateStatusDot(); };
 
         _recorder.RecordingFinished += OnRecordingFinished;
         _recorder.LevelChanged += OnLevelChanged;
@@ -91,7 +118,6 @@ public partial class MainWindow : Window
             L10n.LanguageChanged -= OnLanguageChanged;
             _waveformTimer.Stop();
             _uiTimer.Stop();
-            _blinkTimer.Stop();
             StopPlayback();
             _recorder.Dispose();
         };
@@ -99,43 +125,48 @@ public partial class MainWindow : Window
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
-        // Don't hijack typing inside text inputs (renames, future search box, etc.)
+        // 글자를 치는 중일 때만 비켜선다 (이름 바꾸기 등).
         if (Keyboard.FocusedElement is TextBox) return;
-        // Buttons, toggles and radios answer Space themselves. Without this the window-level
-        // shortcut would start a recording behind the focused control's back.
-        if (e.Key == Key.Space &&
-            Keyboard.FocusedElement is System.Windows.Controls.Primitives.ButtonBase) return;
+
+        // Space 는 이 앱에서 언제나 녹음이다. Windows 관례상 Space 는 포커스된 버튼을 누르는 키지만,
+        // 녹음기에서 가장 중요한 동작이 방금 누른 토글에 가려지는 편이 더 이상하다.
+        // PreviewKeyDown 에서 Handled 로 막으므로 버튼에는 키가 닿지 않는다.
+        // 키보드로 고르는 길은 남아 있다 — 라디오 묶음은 방향키로, 버튼은 Enter 로 눌린다.
 
         bool ctrl = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
 
         switch (e.Key)
         {
             case Key.Space:
-                if (_countdownTimer != null)
+                switch (State)
                 {
-                    StopButton_Click(this, new RoutedEventArgs());
+                    case Transport.Countdown: CancelCountdown(); break;
+                    case Transport.Idle: StartRecording(); break;
+                    default: StopRecording(); break;
                 }
-                else if (_recorder.IsRecording)
-                {
-                    StopButton_Click(this, new RoutedEventArgs());
-                }
-                else if (RecordButton.IsEnabled)
-                {
-                    RecordButton_Click(this, new RoutedEventArgs());
-                }
+                e.Handled = true;
+                break;
+
+            case Key.Escape when State == Transport.Countdown:
+                CancelCountdown();
                 e.Handled = true;
                 break;
 
             case Key.P:
                 if (_recorder.IsRecording)
                 {
-                    PauseButton_Click(this, new RoutedEventArgs());
+                    TogglePause();
                     e.Handled = true;
                 }
                 break;
 
             case Key.O when ctrl:
                 OpenSaveFolder();
+                e.Handled = true;
+                break;
+
+            case Key.F1:
+                TabHelp.IsChecked = true;
                 e.Handled = true;
                 break;
 
@@ -193,6 +224,17 @@ public partial class MainWindow : Window
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        NightSky.DrawStars(StarCanvas, SkySeed);
+        NightSky.DrawMoon(MoonCanvas, MoonCell);
+        NightSky.DrawMoonSparks(MoonSparks);
+        NightSky.Breathe(MoonGlow, MoonGlowScale);
+
+        NightSky.DrawStars(HelpStarCanvas, HelpSkySeed, xScale: 0.5, yScale: 2.2);
+        NightSky.DrawMoon(HelpMoonCanvas, MoonCell);
+        NightSky.DrawMoonSparks(HelpMoonSparks);
+        NightSky.Breathe(HelpMoonGlow, HelpMoonGlowScale);
+        ApplyHelpStep(0);
+
         try
         {
             var devices = AudioRecorder.GetRenderDevices();
@@ -204,7 +246,8 @@ public partial class MainWindow : Window
             MascotSpeech.Text = $"{L10n.T("MsgDeviceLoadFail")}\n{ex.Message}";
         }
 
-        DrawMascot(MascotMood.Idle);
+        ShowTab(TabRecord);
+        UpdateTransport();
         UpdateFormatInfo();
         RefreshRecordings();
         _waveformTimer.Start();
@@ -218,9 +261,177 @@ public partial class MainWindow : Window
         else DragMove();
     }
 
+    // ---------------------------------------------------------------
+    // 테두리 없는 창(WindowStyle="None")은 최대화할 때 모니터 전체를 덮는다 — 작업 표시줄까지.
+    // WM_GETMINMAXINFO 에서 최대 크기를 작업 영역으로 깎아 주어야 표시줄이 살아 있는다.
+    // ---------------------------------------------------------------
+    private const int WM_GETMINMAXINFO = 0x0024;
+    private const int MONITOR_DEFAULTTONEAREST = 0x0002;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativePoint { public int X, Y; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativeRect { public int Left, Top, Right, Bottom; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MinMaxInfo
+    {
+        public NativePoint Reserved, MaxSize, MaxPosition, MinTrackSize, MaxTrackSize;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MonitorInfo
+    {
+        public int Size;
+        public NativeRect Monitor, Work;
+        public int Flags;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(IntPtr handle, int flags);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        var handle = new WindowInteropHelper(this).Handle;
+        HwndSource.FromHwnd(handle)?.AddHook(ClampMaximizeToWorkArea);
+    }
+
+    private IntPtr ClampMaximizeToWorkArea(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg != WM_GETMINMAXINFO) return IntPtr.Zero;
+
+        var monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+        if (monitor == IntPtr.Zero) return IntPtr.Zero;
+
+        var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
+        if (!GetMonitorInfo(monitor, ref info)) return IntPtr.Zero;
+
+        var mmi = Marshal.PtrToStructure<MinMaxInfo>(lParam);
+        mmi.MaxPosition.X = info.Work.Left - info.Monitor.Left;
+        mmi.MaxPosition.Y = info.Work.Top - info.Monitor.Top;
+        mmi.MaxSize.X = info.Work.Right - info.Work.Left;
+        mmi.MaxSize.Y = info.Work.Bottom - info.Work.Top;
+
+        // 최소 크기는 WPF 의 MinWidth/MinHeight 를 화면 픽셀로 환산해 넘긴다.
+        var toDevice = HwndSource.FromHwnd(hwnd)?.CompositionTarget?.TransformToDevice;
+        double scaleX = toDevice?.M11 ?? 1.0;
+        double scaleY = toDevice?.M22 ?? 1.0;
+        mmi.MinTrackSize.X = (int)Math.Ceiling(MinWidth * scaleX);
+        mmi.MinTrackSize.Y = (int)Math.Ceiling(MinHeight * scaleY);
+
+        Marshal.StructureToPtr(mmi, lParam, true);
+        handled = true;
+        return IntPtr.Zero;
+    }
+
     private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
     private void Maximize_Click(object sender, RoutedEventArgs e) => ToggleMaximize();
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void ToggleMaximize()
+    {
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    }
+
+    // =================== Tabs ===================
+    private void Tab_Checked(object sender, RoutedEventArgs e)
+    {
+        // XAML의 IsChecked="True"는 트리가 다 만들어지기 전에 발생한다.
+        if (!IsInitialized) return;
+        ShowTab(sender as RadioButton);
+    }
+
+    private void ShowTab(RadioButton? tab)
+    {
+        RecordPanel.Visibility = ReferenceEquals(tab, TabRecord) ? Visibility.Visible : Visibility.Collapsed;
+        LibraryPanel.Visibility = ReferenceEquals(tab, TabLibrary) ? Visibility.Visible : Visibility.Collapsed;
+        SettingsPanel.Visibility = ReferenceEquals(tab, TabSettings) ? Visibility.Visible : Visibility.Collapsed;
+
+        // 도움말은 패널이 아니라 화면 전체다 — 시안 4a 그대로 히어로까지 덮는다.
+        HelpScreen.Visibility = ReferenceEquals(tab, TabHelp) ? Visibility.Visible : Visibility.Collapsed;
+
+        if (ReferenceEquals(tab, TabLibrary)) RefreshRecordings();
+    }
+
+    // =================== Help tour ===================
+    private void HelpRow_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string tag } && int.TryParse(tag, out int step))
+            ApplyHelpStep(step);
+    }
+
+    private void HelpBack_Click(object sender, RoutedEventArgs e) => ApplyHelpStep(_helpStep - 1);
+
+    private void HelpNext_Click(object sender, RoutedEventArgs e)
+    {
+        if (_helpStep < HelpStepCount - 1)
+        {
+            ApplyHelpStep(_helpStep + 1);
+            return;
+        }
+        // 마지막 칸의 "녹음하자!" — 시안은 처음으로 되감지만, 실제 앱에서는 녹음 화면으로 보내는 게 맞다.
+        ApplyHelpStep(0);
+        TabRecord.IsChecked = true;
+    }
+
+    /// <summary>
+    /// 네 단계를 하나로 묶어 갈아끼운다 — 말풍선 글, 고른 줄의 테두리, 점, 버튼, 그리고 고양이의 자세와 목걸이 색.
+    /// 시안의 HELP 배열(자세 + 강조색)을 그대로 옮긴 것이다.
+    /// </summary>
+    private void ApplyHelpStep(int step)
+    {
+        _helpStep = Math.Clamp(step, 0, HelpStepCount - 1);
+
+        var accents = new[]
+        {
+            (Brush)FindResource("MintBrush"),
+            (Brush)FindResource("PinkBrush"),
+            (Brush)FindResource("AmberBrush"),
+            (Brush)FindResource("LilacBrush"),
+        };
+        var poses = new[] { MascotMood.Idle, MascotMood.Recording, MascotMood.Paused, MascotMood.Countdown };
+        var rows = new[] { HelpRow1, HelpRow2, HelpRow3, HelpRow4 };
+        var texts = new[] { HelpRowText1, HelpRowText2, HelpRowText3, HelpRowText4 };
+        var dots = new[] { HelpDot1, HelpDot2, HelpDot3, HelpDot4 };
+
+        var idle = (Brush)FindResource("PanelSelBrush");
+        var dim = (Brush)FindResource("LineSoftBrush");
+        var cream = (Brush)FindResource("CreamBrush");
+        var mute = (Brush)FindResource("Mute2Brush");
+
+        for (int i = 0; i < HelpStepCount; i++)
+        {
+            bool on = i == _helpStep;
+            rows[i].Background = on ? idle : Brushes.Transparent;
+            rows[i].BorderBrush = on ? accents[i] : idle;
+            texts[i].Foreground = on ? cream : mute;
+            dots[i].Width = dots[i].Height = on ? 14 : 8;
+            dots[i].Fill = on ? (Brush)FindResource("AmberBrush") : dim;
+        }
+
+        HelpSaysLabel.Text = $"{L10n.T("CocoaSays")} · {_helpStep + 1} / {HelpStepCount}";
+        HelpStepTitle.Text = L10n.T($"Step{_helpStep + 1}Title");
+        HelpStepBody.Text = L10n.T($"Step{_helpStep + 1}Body");
+        HelpCounter.Text = $"{_helpStep + 1} / {HelpStepCount}";
+
+        bool first = _helpStep == 0;
+        HelpBackButton.IsEnabled = !first;
+        HelpBackButton.BorderBrush = first ? idle : (Brush)FindResource("LilacBrush");
+        HelpBackButton.Foreground = first ? dim : (Brush)FindResource("LilacBrush");
+
+        bool last = _helpStep == HelpStepCount - 1;
+        HelpNextButton.Background = (Brush)FindResource(last ? "MintBrush" : "AmberBrush");
+        HelpNextText.Text = L10n.T(last ? "HelpDone" : "HelpNext");
+        HelpNextArrow.Visibility = last ? Visibility.Collapsed : Visibility.Visible;
+
+        Mascot.Draw(HelpCatCanvas, poses[_helpStep], HelpCatCell, accents[_helpStep]);
+        NightSky.Drift(HelpCatBob, poses[_helpStep] == MascotMood.Paused ? 3.4 : 2.4);
+    }
 
     // =================== Language toggle ===================
     private void LangToggle_Checked(object sender, RoutedEventArgs e)
@@ -241,30 +452,12 @@ public partial class MainWindow : Window
 
         // XAML의 DynamicResource는 자동 갱신되므로, 코드가 직접 세팅하는
         // 상태 의존 텍스트만 현재 상태에 맞춰 다시 그린다.
-        if (_countdownTimer != null)
-        {
-            StatusLabel.Text = L10n.T("StatusCountdown");
-        }
-        else if (_recorder.IsRecording)
-        {
-            StatusLabel.Text = _recorder.IsPaused ? L10n.T("StatusPaused") : L10n.T("StatusRecording");
-            RecordButtonText.Text = L10n.T("Recording");
-        }
-        else
-        {
-            StatusLabel.Text = L10n.T("StatusIdle");
-            RecordButtonText.Text = L10n.T("RecordStart");
-            MascotSpeech.Text = Pick(L10n.IdleMessages);
-        }
-
-        UpdateCountdownVisual(); // "3초" / "3 sec" 는 코드가 조립하므로 직접 다시 그린다
+        if (State == Transport.Idle) MascotSpeech.Text = Pick(L10n.IdleMessages);
+        UpdateTransport();
+        UpdateCountdownVisual(); // "3초" / "3s" 는 코드가 조립하므로 직접 다시 그린다
+        ApplyHelpStep(_helpStep);
         UpdateFormatInfo();
         RefreshRecordings(); // 카드 Meta의 날짜 표기 언어 갱신
-    }
-
-    private void ToggleMaximize()
-    {
-        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
     }
 
     // =================== Folder picker ===================
@@ -286,28 +479,52 @@ public partial class MainWindow : Window
         }
     }
 
+    private void Device_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        _deviceSampleRate = DeviceCombo.SelectedItem is MMDevice device
+            ? AudioRecorder.TryGetSampleRate(device)
+            : 0;
+        if (IsInitialized) UpdateFormatInfo();
+    }
+
     // =================== Format toggle ===================
     private void Format_Checked(object sender, RoutedEventArgs e)
     {
-        if (!IsLoaded) return;
+        if (!IsInitialized) return;
         UpdateFormatInfo();
     }
 
     private void Bitrate_Checked(object sender, RoutedEventArgs e)
     {
-        if (!IsLoaded) return;
+        if (!IsInitialized) return;
         if (LoToggle.IsChecked == true) _recorder.Mp3Quality = Mp3Quality.Low;
         else if (HiToggle.IsChecked == true) _recorder.Mp3Quality = Mp3Quality.High;
         else _recorder.Mp3Quality = Mp3Quality.Medium;
         UpdateFormatInfo();
     }
 
+    // =================== Countdown length ===================
     private void CountdownDown_Click(object sender, RoutedEventArgs e) => StepCountdown(-1);
     private void CountdownUp_Click(object sender, RoutedEventArgs e) => StepCountdown(+1);
 
     private void StepCountdown(int delta)
     {
-        var next = Math.Clamp(_preferences.CountdownSeconds + delta, 0, AppPreferences.MaxCountdownSeconds);
+        SetCountdownSeconds(_preferences.CountdownSeconds + delta);
+    }
+
+    private bool _syncingCountdown;
+
+    /// <summary>레일의 프리셋(off · 3s · 5s · 10s)은 스테퍼와 같은 값을 건드린다.</summary>
+    private void CountdownPreset_Checked(object sender, RoutedEventArgs e)
+    {
+        if (!IsInitialized || _syncingCountdown) return;
+        if (sender is RadioButton { Tag: string tag } && int.TryParse(tag, out int seconds))
+            SetCountdownSeconds(seconds);
+    }
+
+    private void SetCountdownSeconds(int seconds)
+    {
+        var next = Math.Clamp(seconds, 0, AppPreferences.MaxCountdownSeconds);
         if (next == _preferences.CountdownSeconds) return;
         _preferences.CountdownSeconds = next;
         _preferences.Save();
@@ -321,85 +538,70 @@ public partial class MainWindow : Window
             ? L10n.T("CountdownZero")
             : string.Format(L10n.T("CountdownUnit"), seconds);
 
-        // 0초는 카운트다운이 없는 상태다. 선택되지 않은 세그먼트와 같은 무게로 낮춰 둔다.
-        bool off = seconds == 0;
-        CountdownValueBox.Background = (Brush)FindResource(off ? "PaperBrush" : "LilacBrush");
-        CountdownValueStripe.Fill = (Brush)FindResource(off ? "CreamDeepBrush" : "LilacDeepBrush");
-        CountdownValueText.Foreground = (Brush)FindResource(off ? "InkSoftBrush" : "InkDarkBrush");
+        // 프리셋에 없는 값(1·2·4…)이면 어느 칸도 켜지 않는다 — 스테퍼가 진실이다.
+        _syncingCountdown = true;
+        CountdownOff.IsChecked = seconds == 0;
+        Countdown3.IsChecked = seconds == 3;
+        Countdown5.IsChecked = seconds == 5;
+        Countdown10.IsChecked = seconds == 10;
+        _syncingCountdown = false;
 
-        SetCountdownChoiceEnabled(!_recorder.IsRecording && _countdownTimer == null);
+        bool editable = State is Transport.Idle;
+        CountdownDownButton.IsEnabled = editable && seconds > 0;
+        CountdownUpButton.IsEnabled = editable && seconds < AppPreferences.MaxCountdownSeconds;
+        foreach (var preset in new[] { CountdownOff, Countdown3, Countdown5, Countdown10 })
+            preset.IsEnabled = editable;
     }
 
     private void UpdateFormatInfo()
     {
         bool isMp3 = Mp3Toggle.IsChecked == true;
-        var fmt = isMp3 ? "MP3" : "WAV";
-        var visibility = isMp3 ? Visibility.Visible : Visibility.Collapsed;
-        BitrateLabel.Visibility = visibility;
-        BitrateGroup.Visibility = visibility;
+        BitrateLabel.Visibility = isMp3 ? Visibility.Visible : Visibility.Collapsed;
+        BitrateGroup.Visibility = isMp3 ? Visibility.Visible : Visibility.Collapsed;
 
-        if (isMp3)
-        {
-            string q = LoToggle.IsChecked == true ? "LO"
-                     : HiToggle.IsChecked == true ? "HI" : "MED";
-            FormatInfoText.Text = $"MP3 {q} · {L10n.T("SystemSound")}";
-        }
-        else
-        {
-            FormatInfoText.Text = $"WAV · {L10n.T("SystemSound")}";
-        }
+        string label = isMp3
+            ? "MP3 " + (LoToggle.IsChecked == true ? "LO" : HiToggle.IsChecked == true ? "HI" : "MED")
+            : "WAV";
+
+        int rate = _recorder.SampleRate > 0 ? _recorder.SampleRate : _deviceSampleRate;
+        FormatInfoText.Text = rate > 0
+            ? $" · {label} · {rate / 1000.0:0.#} kHz"
+            : $" · {label}";
     }
 
     // =================== Transport ===================
-    private void RecordButton_Click(object sender, RoutedEventArgs e)
+    private void PrimaryButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_recorder.IsRecording) return;
-        StartRecording();
-    }
-
-    private void StopButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (_countdownTimer != null)
+        switch (State)
         {
-            CancelCountdownIfRunning();
-            MascotSpeech.Text = L10n.T("MsgCancelled");
-            return;
+            case Transport.Countdown: CancelCountdown(); break;
+            case Transport.Idle: StartRecording(); break;
+            case Transport.Paused: TogglePause(); break;
+            default: StopRecording(); break;
         }
-        if (!_recorder.IsRecording) return;
-        MascotSpeech.Text = L10n.T("MsgSaving");
-        _recorder.Stop();
     }
 
-    private void PauseButton_Click(object sender, RoutedEventArgs e)
+    private void SecondaryButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (State == Transport.Recording) TogglePause();
+        else if (State == Transport.Paused) StopRecording();
+    }
+
+    private void TogglePause()
     {
         if (!_recorder.IsRecording) return;
         if (_recorder.IsPaused) _recorder.Resume();
         else _recorder.Pause();
-        UpdatePauseVisual();
+
+        MascotSpeech.Text = L10n.T(_recorder.IsPaused ? "MsgPaused" : "MsgResumed");
+        UpdateTransport();
     }
 
-    private void UpdatePauseVisual()
+    private void StopRecording()
     {
-        bool paused = _recorder.IsPaused;
-        PauseIconGroup.Visibility = paused ? Visibility.Collapsed : Visibility.Visible;
-        ResumeIconGroup.Visibility = paused ? Visibility.Visible : Visibility.Collapsed;
-
-        if (paused)
-        {
-            StatusLabel.Text = L10n.T("StatusPaused");
-            MascotSpeech.Text = L10n.T("MsgPaused");
-            DrawMascot(MascotMood.Paused);
-            _blinkTimer.Stop();
-            _blinkOn = true;
-        }
-        else
-        {
-            StatusLabel.Text = L10n.T("StatusRecording");
-            MascotSpeech.Text = L10n.T("MsgResumed");
-            DrawMascot(MascotMood.Recording);
-            _blinkTimer.Start();
-        }
-        UpdateStatusDot();
+        if (!_recorder.IsRecording) return;
+        MascotSpeech.Text = L10n.T("MsgSaving");
+        _recorder.Stop();
     }
 
     private DispatcherTimer? _countdownTimer;
@@ -421,20 +623,15 @@ public partial class MainWindow : Window
     private void BeginCountdown(int from)
     {
         _countdownValue = from;
-        DeviceCombo.IsEnabled = false;
-        WavToggle.IsEnabled = false;
-        Mp3Toggle.IsEnabled = false;
-        RecordButton.IsEnabled = false;
-        SetCountdownChoiceEnabled(false);
-        StopButton.IsEnabled = true; // Lets the user cancel mid-count via the stop button or Space.
-        PauseButton.Visibility = Visibility.Collapsed;
-
-        ApplyCountdownVisual();
 
         _countdownTimer?.Stop();
         _countdownTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(900) };
         _countdownTimer.Tick += CountdownTick;
         _countdownTimer.Start();
+
+        CountdownOverlay.Visibility = Visibility.Visible;
+        ApplyCountdownVisual();
+        UpdateTransport();
     }
 
     private void CountdownTick(object? sender, EventArgs e)
@@ -442,9 +639,7 @@ public partial class MainWindow : Window
         _countdownValue--;
         if (_countdownValue <= 0)
         {
-            _countdownTimer?.Stop();
-            _countdownTimer = null;
-            EndCountdownVisual();
+            EndCountdown();
             ActuallyStartRecording();
         }
         else
@@ -455,11 +650,7 @@ public partial class MainWindow : Window
 
     private void ApplyCountdownVisual()
     {
-        TimerMin.Text = _countdownValue.ToString();
-        TimerSec.Visibility = Visibility.Collapsed;
-        TimerColon.Visibility = Visibility.Collapsed;
-        TimerCs.Visibility = Visibility.Collapsed;
-        StatusLabel.Text = L10n.T("StatusCountdown");
+        CountdownDigit.Text = _countdownValue.ToString();
         MascotSpeech.Text = _countdownValue switch
         {
             3 => L10n.T("Count3"),
@@ -469,20 +660,26 @@ public partial class MainWindow : Window
         };
     }
 
-    private void EndCountdownVisual()
+    private void EndCountdown()
     {
-        TimerSec.Visibility = Visibility.Visible;
-        TimerColon.Visibility = Visibility.Visible;
-        TimerCs.Visibility = Visibility.Visible;
-        ResetTimerLabels();
+        _countdownTimer?.Stop();
+        _countdownTimer = null;
+        CountdownOverlay.Visibility = Visibility.Collapsed;
+    }
+
+    private void CancelCountdown()
+    {
+        if (_countdownTimer == null) return;
+        EndCountdown();
+        MascotSpeech.Text = L10n.T("MsgCancelled");
+        UpdateTransport();
     }
 
     private void ActuallyStartRecording()
     {
         if (DeviceCombo.SelectedItem is not MMDevice device)
         {
-            // Re-enable controls and bail.
-            SetRecordingVisual(false);
+            UpdateTransport();
             MascotSpeech.Text = L10n.T("MsgPickDevice");
             return;
         }
@@ -498,33 +695,24 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            SetRecordingVisual(false);
+            UpdateTransport();
             MascotSpeech.Text = $"{L10n.T("MsgStartFail")}\n{ex.Message}";
             return;
         }
 
-        SetRecordingVisual(true);
+        MascotSpeech.Text = Pick(L10n.StartMessages);
+        UpdateTransport();
+        UpdateFormatInfo();   // 이제 실제 샘플레이트를 알 수 있다
         _uiTimer.Start();
-        _blinkTimer.Start();
-    }
-
-    private void CancelCountdownIfRunning()
-    {
-        if (_countdownTimer != null)
-        {
-            _countdownTimer.Stop();
-            _countdownTimer = null;
-            EndCountdownVisual();
-            SetRecordingVisual(false);
-        }
     }
 
     private void OnRecordingFinished(object? sender, RecordingFinishedEventArgs e)
     {
         Dispatcher.Invoke(() =>
         {
-            SetRecordingVisual(false);
+            _uiTimer.Stop();
             ResetTimerLabels();
+            UpdateTransport();
 
             if (e.Error != null)
             {
@@ -538,62 +726,167 @@ public partial class MainWindow : Window
     }
 
     // =================== Visual state ===================
-    private void SetRecordingVisual(bool recording)
+    /// <summary>
+    /// 상태 하나가 히어로 색, 트랜스포트 두 버튼, 잠기는 컨트롤을 한꺼번에 결정한다.
+    /// 시안의 3a~3d 프레임이 그대로 여기에 대응한다.
+    /// </summary>
+    private void UpdateTransport()
     {
-        DeviceCombo.IsEnabled = !recording;
-        WavToggle.IsEnabled = !recording;
-        Mp3Toggle.IsEnabled = !recording;
-        LoToggle.IsEnabled = !recording;
-        MedToggle.IsEnabled = !recording;
-        HiToggle.IsEnabled = !recording;
-        RecordButton.IsEnabled = !recording;
-        SetCountdownChoiceEnabled(!recording);
-        StopButton.IsEnabled = recording;
-        PauseButton.IsEnabled = recording;
-        PauseButton.Visibility = recording ? Visibility.Visible : Visibility.Collapsed;
-        PauseIconGroup.Visibility = Visibility.Visible;
-        ResumeIconGroup.Visibility = Visibility.Collapsed;
+        var state = State;
+        bool locked = state != Transport.Idle;
 
-        if (recording)
+        DeviceCombo.IsEnabled = !locked;
+        WavToggle.IsEnabled = !locked;
+        Mp3Toggle.IsEnabled = !locked;
+        LoToggle.IsEnabled = !locked;
+        MedToggle.IsEnabled = !locked;
+        HiToggle.IsEnabled = !locked;
+        UpdateCountdownVisual();
+
+        HeroBackdrop.Background = (Brush)FindResource(state switch
         {
-            StatusLabel.Text = L10n.T("StatusRecording");
-            RecordButtonText.Text = L10n.T("Recording");
-            MascotSpeech.Text = Pick(L10n.StartMessages);
-            DrawMascot(MascotMood.Recording);
-        }
-        else
+            Transport.Recording => "HeroRecBrush",
+            Transport.Paused    => "HeroPauseBrush",
+            _                   => "HeroBrush",
+        });
+
+        StatusLabel.Text = L10n.T(state switch
         {
-            StatusLabel.Text = L10n.T("StatusIdle");
-            RecordButtonText.Text = L10n.T("RecordStart");
-            DrawMascot(MascotMood.Idle);
-            _blinkTimer.Stop();
-            _uiTimer.Stop();
-            _blinkOn = true;
+            Transport.Countdown => "StatusCountdown",
+            Transport.Recording => "StatusRecording",
+            Transport.Paused    => "StatusPaused",
+            _                   => "StatusIdle",
+        });
+
+        var night = (Brush)FindResource("NightBrush");
+        var lilac = (Brush)FindResource("LilacBrush");
+
+        switch (state)
+        {
+            case Transport.Countdown:
+                PrimaryButton.Background = Brushes.Transparent;
+                PrimaryButton.BorderBrush = lilac;
+                PrimaryButton.Foreground = lilac;
+                PrimaryDot.Fill = lilac;
+                PrimaryText.Text = L10n.T("CancelBtn");
+                SecondaryButton.Visibility = Visibility.Collapsed;
+                break;
+
+            case Transport.Recording:
+                PrimaryButton.Background = (Brush)FindResource("PinkBrush");
+                PrimaryButton.BorderBrush = Brushes.Transparent;
+                PrimaryButton.Foreground = night;
+                PrimaryDot.Fill = night;
+                PrimaryText.Text = L10n.T("StopBtn");
+                SecondaryButton.Visibility = Visibility.Visible;
+                SecondaryText.Text = L10n.T("PauseBtn");
+                SecondaryBars.Visibility = Visibility.Visible;
+                SecondarySquare.Visibility = Visibility.Collapsed;
+                break;
+
+            case Transport.Paused:
+                PrimaryButton.Background = (Brush)FindResource("AmberBrush");
+                PrimaryButton.BorderBrush = Brushes.Transparent;
+                PrimaryButton.Foreground = night;
+                PrimaryDot.Fill = night;
+                PrimaryText.Text = L10n.T("ResumeBtn");
+                SecondaryButton.Visibility = Visibility.Visible;
+                SecondaryText.Text = L10n.T("StopBtn");
+                SecondaryBars.Visibility = Visibility.Collapsed;
+                SecondarySquare.Visibility = Visibility.Visible;
+                break;
+
+            default:
+                PrimaryButton.Background = (Brush)FindResource("PinkBrush");
+                PrimaryButton.BorderBrush = Brushes.Transparent;
+                PrimaryButton.Foreground = night;
+                PrimaryDot.Fill = night;
+                PrimaryText.Text = L10n.T("RecordStart");
+                SecondaryButton.Visibility = Visibility.Collapsed;
+                break;
         }
+
+        DrawMascot(state switch
+        {
+            Transport.Countdown => MascotMood.Countdown,
+            Transport.Recording => MascotMood.Recording,
+            Transport.Paused    => MascotMood.Paused,
+            _                   => MascotMood.Idle,
+        });
+
+        // 시안의 catAnim — 녹음일 때만 옆으로 꼬리를 살랑이고, 나머지는 제자리에서 떠다닌다.
+        if (state == Transport.Recording) NightSky.Sway(MascotBob, 0.7);
+        else NightSky.Drift(MascotBob, state switch
+        {
+            Transport.Countdown => 2.4,
+            Transport.Paused    => 3.4,
+            _                   => 3.0,
+        });
+
         UpdateStatusDot();
+        UpdateSizeLabel();
     }
 
-    private void SetCountdownChoiceEnabled(bool enabled)
-    {
-        CountdownDownButton.IsEnabled = enabled && _preferences.CountdownSeconds > 0;
-        CountdownUpButton.IsEnabled = enabled && _preferences.CountdownSeconds < AppPreferences.MaxCountdownSeconds;
-    }
-
+    /// <summary>
+    /// 상태 점은 상태마다 다르게 뛴다 — 시안의 twk · recPulse 키프레임을 그대로 옮겼다.
+    /// 대기는 3초에 걸쳐 천천히, 카운트다운은 1초에 딱딱 끊어서, 녹음은 1.1초에 분홍 후광까지 같이.
+    /// </summary>
     private void UpdateStatusDot()
     {
-        if (_recorder.IsRecording)
+        StatusDot.BeginAnimation(UIElement.OpacityProperty, null);
+        StatusDot.Effect = null;
+
+        switch (State)
         {
-            if (_recorder.IsPaused)
-                StatusDot.Background = (Brush)FindResource("LilacDeepBrush");
-            else
-                StatusDot.Background = _blinkOn
-                    ? (Brush)FindResource("AccentDeepBrush")
-                    : (Brush)FindResource("AccentSoftBrush");
+            case Transport.Countdown:
+                StatusDot.Background = (Brush)FindResource("AmberBrush");
+                var steps = new DoubleAnimationUsingKeyFrames
+                {
+                    RepeatBehavior = RepeatBehavior.Forever,
+                    Duration = TimeSpan.FromSeconds(1),
+                };
+                steps.KeyFrames.Add(new DiscreteDoubleKeyFrame(1.0, KeyTime.FromPercent(0)));
+                steps.KeyFrames.Add(new DiscreteDoubleKeyFrame(0.18, KeyTime.FromPercent(0.5)));
+                Timeline.SetDesiredFrameRate(steps, 20);
+                StatusDot.BeginAnimation(UIElement.OpacityProperty, steps);
+                break;
+
+            case Transport.Recording:
+                StatusDot.Background = (Brush)FindResource("PinkBrush");
+                var glow = new DropShadowEffect
+                {
+                    Color = (Color)FindResource("PinkColor"),
+                    ShadowDepth = 0,
+                    BlurRadius = 10,
+                    Opacity = 0.9,
+                };
+                StatusDot.Effect = glow;
+                StatusDot.BeginAnimation(UIElement.OpacityProperty, Pulse(1.0, 0.35, 1.1));
+                glow.BeginAnimation(DropShadowEffect.BlurRadiusProperty, Pulse(10, 22, 1.1));
+                break;
+
+            case Transport.Paused:
+                StatusDot.Background = (Brush)FindResource("AmberBrush");
+                StatusDot.Opacity = 1.0;
+                break;
+
+            default:
+                StatusDot.Background = (Brush)FindResource("MintBrush");
+                StatusDot.BeginAnimation(UIElement.OpacityProperty, Pulse(0.18, 1.0, 3));
+                break;
         }
-        else
+    }
+
+    private static DoubleAnimation Pulse(double from, double to, double seconds)
+    {
+        var anim = new DoubleAnimation(from, to, TimeSpan.FromSeconds(seconds / 2))
         {
-            StatusDot.Background = (Brush)FindResource("InkSoftBrush");
-        }
+            AutoReverse = true,
+            RepeatBehavior = RepeatBehavior.Forever,
+            EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
+        };
+        Timeline.SetDesiredFrameRate(anim, 30);
+        return anim;
     }
 
     private void UpdateTimerLabels()
@@ -609,6 +902,36 @@ public partial class MainWindow : Window
         TimerMin.Text = "00";
         TimerSec.Text = "00";
         TimerCs.Text = ".00";
+    }
+
+    /// <summary>
+    /// 지금까지 담긴 양. WAV는 실제로 쓴 바이트, MP3는 프리셋의 평균 비트레이트로 어림한다
+    /// (임시 WAV로 받아 두었다가 정지할 때 변환하므로 진행 중에는 최종 크기를 알 수 없다).
+    /// </summary>
+    private void UpdateSizeLabel()
+    {
+        if (!_recorder.IsRecording)
+        {
+            SizeText.Text = "0.0 MB";
+            return;
+        }
+
+        long bytes;
+        if (Mp3Toggle.IsChecked == true)
+        {
+            int kbps = _recorder.Mp3Quality switch
+            {
+                Mp3Quality.Low => 150,
+                Mp3Quality.High => 245,
+                _ => 190,
+            };
+            bytes = (long)(_recorder.Elapsed.TotalSeconds * kbps * 1000 / 8);
+        }
+        else
+        {
+            bytes = _recorder.CapturedBytes;
+        }
+        SizeText.Text = FormatBytes(bytes);
     }
 
     // =================== Waveform / level meter ===================
@@ -627,15 +950,18 @@ public partial class MainWindow : Window
 
     private void TickWaveform()
     {
-        bool active = _recorder.IsRecording && !_recorder.IsPaused;
-        var mintFill = (Brush)FindResource("MintDeepBrush");
-        var goldFill = (Brush)FindResource("GoldBrush");
-        var coralFill = (Brush)FindResource("AccentDeepBrush");
-        var emptyFill = (Brush)FindResource("CreamDeepBrush");
+        var state = State;
+        bool active = state == Transport.Recording;
+        var low = (Brush)FindResource("WaveLowBrush");
+        var mid = (Brush)FindResource("LilacBrush");
+        var high = (Brush)FindResource("MintBrush");
+        var levelOn = (Brush)FindResource("MintBrush");
+        var levelWarm = (Brush)FindResource("AmberBrush");
+        var emptyFill = (Brush)FindResource("WellBrush");
 
         double now = Environment.TickCount;
         double tIdle = now / 420.0;
-        const double maxBarHeight = 110.0;
+        const double maxBarHeight = 96.0;   // 시안의 wave(colors, 96)
 
         // Pull the peak that capture thread has been accumulating since last tick.
         double currentPeak;
@@ -662,54 +988,54 @@ public partial class MainWindow : Window
             _smoothedLevel *= 0.6;
         }
 
+        // 녹음이 아닐 때는 시안의 flatWave처럼 낮고 고른 선으로 가라앉는다.
+        // 상태마다 선의 높이·색·투명도가 달라서 소리가 들어오고 있는지 한눈에 갈린다.
+        var (restFill, restHeight, waveOpacity) = state switch
+        {
+            Transport.Recording => (low, 0.0, 0.95),
+            Transport.Paused    => ((Brush)FindResource("LineBrush"), 10.0, 0.70),
+            Transport.Countdown => ((Brush)FindResource("LineSoftBrush"), 8.0, 0.50),
+            _                   => ((Brush)FindResource("WellBrush"), 6.0, 0.60),
+        };
+        WaveformHost.Opacity = waveOpacity;
+
         for (int i = 0; i < BarCount; i++)
         {
-            double h;
             if (active)
             {
                 int idx = (_peakWriteIdx + i) % BarCount;
-                double p = _peakHistory[idx];
-                h = Math.Max(0.04, Math.Min(1.0, p));
+                double h = Math.Max(0.04, Math.Min(1.0, _peakHistory[idx]));
+                _bars[i].Height = Math.Max(4, h * maxBarHeight);
+                _bars[i].Fill = h < 0.32 ? low : h < 0.62 ? mid : high;
             }
             else
             {
-                h = 0.12 + Math.Abs(Math.Sin(tIdle + i * 0.4)) * 0.18;
+                double drift = state == Transport.Idle ? Math.Abs(Math.Sin(tIdle + i * 0.4)) * 2.0 : i % 3;
+                _bars[i].Height = restHeight + drift;
+                _bars[i].Fill = restFill;
             }
-
-            _bars[i].Height = Math.Max(4, h * maxBarHeight);
-            _bars[i].Fill = h < 0.4 ? mintFill : (h < 0.75 ? goldFill : coralFill);
         }
 
         int litCount = (int)Math.Round(_smoothedLevel * LevelCellCount);
         for (int i = 0; i < LevelCellCount; i++)
         {
             bool lit = i < litCount;
-            Brush color = i < 12 ? mintFill : (i < 15 ? goldFill : coralFill);
+            // 시안의 level(): 아래 아홉 칸은 민트, 그 위는 앰버. 세 번째 색은 쓰지 않는다.
+            Brush color = i < 9 ? levelOn : levelWarm;
             _levelCells[i].Fill = lit ? color : emptyFill;
         }
 
-        // Mascot bob — react to audio while recording, gentle breathing while idle.
+        // 녹음 중 코코아는 두 축으로 움직인다 — 가로는 시안의 tailSway 애니메이션이 맡고,
+        // 세로는 여기서 소리 크기에 맞춰 직접 밀어 준다. Sway가 Y의 애니메이션을 벗겨 두므로
+        // 이 대입이 먹힌다 (다른 상태에서는 Drift가 Y를 쥐고 있어 손대지 않는다).
         if (active)
         {
-            _mascotBobTarget = -Math.Min(7.0, _smoothedLevel * 9.0);
+            double lift = -Math.Min(7.0, _smoothedLevel * 9.0);
+            MascotBob.Y = MascotBob.Y * 0.7 + lift * 0.3;
         }
-        else if (_recorder.IsRecording && _recorder.IsPaused)
-        {
-            _mascotBobTarget = 0;
-        }
-        else
-        {
-            _mascotBobTarget = Math.Sin(now / 900.0) * 1.8;
-        }
-        MascotBob.Y = MascotBob.Y * 0.7 + _mascotBobTarget * 0.3;
-
-        // Status dot pumps when actively recording.
-        double pumpTarget = active ? 1.0 + 0.18 * Math.Abs(Math.Sin(now / 220.0)) : 1.0;
-        StatusDotScale.ScaleX = StatusDotScale.ScaleX * 0.7 + pumpTarget * 0.3;
-        StatusDotScale.ScaleY = StatusDotScale.ScaleX;
 
         // Periodically rotate idle chatter (~ every 18s) so the mascot feels alive.
-        if (!_recorder.IsRecording && _countdownTimer == null)
+        if (state == Transport.Idle)
         {
             _idleSpeechTick++;
             if (_idleSpeechTick >= 300) // 300 * 60ms ≈ 18s
@@ -737,12 +1063,14 @@ public partial class MainWindow : Window
             return;
         }
 
+        // 테이프 색은 시안의 네 가지 신호색을 줄 순서대로 돌려 쓴다.
+        // (이름 해시로 뽑으면 비슷한 이름이 같은 색에 몰려 목록이 단색으로 보인다.)
         var palette = new Brush[]
         {
-            (Brush)FindResource("CoralBrush"),
+            (Brush)FindResource("PinkSoftBrush"),
             (Brush)FindResource("MintBrush"),
+            (Brush)FindResource("AmberBrush"),
             (Brush)FindResource("LilacBrush"),
-            (Brush)FindResource("GoldBrush"),
         };
 
         var files = new DirectoryInfo(_saveFolder)
@@ -763,7 +1091,7 @@ public partial class MainWindow : Window
                 Name = fi.Name,
                 Path = fi.FullName,
                 Meta = $"{fmt} · {dur} · {FormatBytes(fi.Length)} · {L10n.FormatMetaDate(fi.LastWriteTime)}",
-                TapeColor = palette[StableHash(fi.Name) % palette.Length]
+                TapeColor = palette[i % palette.Length]
             });
         }
         UpdateLibraryUi();
@@ -896,7 +1224,26 @@ public partial class MainWindow : Window
 
     private void Card_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
+        // 드래그로 빠져나가지 않은 진짜 클릭일 때만 선택을 토글한다
+        // (드래그가 시작되면 Card_MouseMove가 _dragCandidate를 비운다).
+        if (_dragCandidate != null && sender is FrameworkElement fe
+            && fe.DataContext is RecordingItem item && !item.IsRenaming)
+        {
+            SelectRecording(item);
+        }
         _dragCandidate = null;
+    }
+
+    /// <summary>
+    /// 한 번에 한 줄만 열린다 — 그 줄에서만 재생 · 폴더 · 삭제 버튼이 나온다.
+    /// 이미 열린 줄을 다시 눌러도 아무 일도 일어나지 않는다 (다시 튀어나오지 않게).
+    /// 닫으려면 다른 줄을 고르면 된다.
+    /// </summary>
+    private void SelectRecording(RecordingItem item)
+    {
+        if (item.IsSelected) return;
+        foreach (var other in _recordings) other.IsSelected = false;
+        item.IsSelected = true;
     }
 
     private void Card_MouseMove(object sender, MouseEventArgs e)
@@ -920,22 +1267,21 @@ public partial class MainWindow : Window
         catch { /* ignore drag aborts */ }
     }
 
-    private static int StableHash(string s)
-    {
-        // String.GetHashCode is randomized per-process; this keeps the
-        // tape color attached to the same filename across launches.
-        unchecked
-        {
-            int h = 5381;
-            foreach (var c in s) h = h * 33 ^ c;
-            return h & 0x7fffffff;
-        }
-    }
-
     private void UpdateLibraryUi()
     {
+        // 같은 RecordingItem 인스턴스를 둘이 나눠 쓰므로, 어느 화면에서 골라도 선택 상태가 함께 움직인다.
+        _recent.Clear();
+        foreach (var item in _recordings.Take(RecentCount)) _recent.Add(item);
+
         RecordingCountText.Text = string.Format(L10n.T("CountFmt"), _recordings.Count);
-        EmptyStateText.Visibility = _recordings.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        int hidden = _recordings.Count - _recent.Count;
+        RecentMoreText.Text = hidden > 0 ? string.Format(L10n.T("RecentMore"), hidden) : string.Empty;
+        RecentMoreText.Visibility = hidden > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        var empty = _recordings.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        EmptyStateText.Visibility = empty;
+        LibraryEmptyText.Visibility = empty;
     }
 
     private static string FormatBytes(long bytes)
@@ -1036,6 +1382,22 @@ public partial class MainWindow : Window
         }
     }
 
+    private void RevealRecording_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement fe || fe.Tag is not string path) return;
+        try
+        {
+            if (File.Exists(path))
+                Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") { UseShellExecute = true });
+            else
+                OpenSaveFolder();
+        }
+        catch (Exception ex)
+        {
+            MascotSpeech.Text = $"{L10n.T("MsgFolderOpenFail")}\n{ex.Message}";
+        }
+    }
+
     private void DeleteRecording_Click(object sender, RoutedEventArgs e)
     {
         if (sender is FrameworkElement fe && fe.Tag is string path && File.Exists(path))
@@ -1050,7 +1412,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void DrawMascot(MascotMood mood) => Mascot.Draw(MascotCanvas, mood);
+    private void DrawMascot(MascotMood mood) => Mascot.Draw(MascotCanvas, mood, CatCell);
 
     private sealed class AppPreferences
     {
@@ -1183,6 +1545,14 @@ public sealed class RecordingItem : INotifyPropertyChanged
     {
         get => _isRenaming;
         set { if (_isRenaming != value) { _isRenaming = value; OnChanged(); } }
+    }
+
+    /// <summary>이 줄이 열려 동작 버튼을 내보이고 있는지.</summary>
+    private bool _isSelected;
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set { if (_isSelected != value) { _isSelected = value; OnChanged(); } }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

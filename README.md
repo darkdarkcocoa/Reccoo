@@ -5,9 +5,13 @@
 
 [한국어](README.ko.md) | **English**
 
-Cocoa Recorder (formerly Reccoo) is a small recorder that captures whatever your PC is playing. Streaming music, game audio, live broadcasts — anything coming out of your speakers can be recorded with a single click and saved as WAV or MP3. Since it records the audio signal directly (not through a microphone), recordings are clean with no background noise. And while you record, the pixel mascot "Coco" keeps you company. 🐤
+Cocoa Recorder (formerly Reccoo) is a small recorder that captures whatever your PC is playing. Streaming music, game audio, live broadcasts — anything coming out of your speakers can be recorded with a single click and saved as WAV or MP3. Since it records the audio signal directly (not through a microphone), recordings are clean with no background noise. And while you record, Cocoa the pixel cat sits on a crescent moon and keeps you company. 🌙
 
 ![Cocoa Recorder — English UI](assets/screenshot-en.png)
+
+<sub>Cocoa explaining herself, four steps at a time — press `F1` any time.</sub>
+
+![Cocoa Recorder — the guided tour](assets/screenshot-help.png)
 
 ![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square)
 ![WPF](https://img.shields.io/badge/UI-WPF-1f6feb?style=flat-square)
@@ -54,18 +58,20 @@ Full changelogs are on the [Releases page](https://github.com/darkdarkcocoa/coco
 
 **👀 Fun to watch**
 
-- **Live waveform** — the current audio dances across 56 pixel bars (mint → gold → coral gradient)
+- **A night sky that breathes** — 141 stars twinkle on their own clocks behind a hand-drawn pixel moon, and the whole hero shifts colour with the recording state
+- **Live waveform** — the current audio runs across 56 pixel bars, and settles into a quiet flat line the moment you stop
 - **Input level meter** — an 18-cell pixel meter shows the volume at a glance
-- **Mascot "Cocoa"** — bobs along with the audio, changes expressions with the recording state, and occasionally chats
+- **Cocoa the cat** — sits on the moon, perks her ears up and sways while recording, curls up asleep when you pause, and speaks up now and then
 - **KOR | EN language toggle** — flip the whole UI (mascot chatter included) between Korean and English right from the title bar
 
 **📼 After recording**
 
-- **Library** — recordings are organized as cassette-tape cards, with duration display and inline renaming
-- **Mini player** — play recordings right inside the app and seek with a progress bar
+- **Four tabs** — record, library, settings and a four-step guided tour Cocoa narrates herself (`F1`)
+- **Library** — every recording is a row with its own colour bar. Click one and play, reveal-in-folder and delete glide out from the right
+- **Mini player** — play recordings right inside the app, with a progress line under the row
 - **Drag to export** — drag a card into a folder or a chat window to copy the file
 - **Recycle-bin deletes** — deleted files go to the Recycle Bin, so mistakes are recoverable
-- **Keyboard shortcuts** — start and stop recording without touching the mouse
+- **Keyboard shortcuts** — `Space` to start and stop, `P` to pause, `Ctrl+O` for the folder, `F1` for help
 
 ---
 
@@ -115,9 +121,11 @@ The structure is intentionally simple — just a handful of source files, no fra
 cocoa-recorder/
 ├── App.xaml                  # Pixel theme ResourceDictionary (palette + control styles)
 ├── App.xaml.cs
-├── MainWindow.xaml           # 1216×736 main layout
+├── MainWindow.xaml           # 1216×852 main layout
 ├── MainWindow.xaml.cs        # Transport / waveform / library logic
-├── Mascot.cs                 # Cocoa sprite — drawn pixel by pixel, not an image asset
+├── Mascot.cs                 # Cocoa the cat, 22×24 cells — drawn cell by cell, not an image
+├── NightSky.cs               # Pixel moon and the twinkling star field
+├── Localization.cs           # Korean / English strings
 ├── AudioRecorder.cs          # NAudio capture + WAV/MP3 encoding
 ├── AssemblyInfo.cs
 ├── CocoaRecorder.csproj
@@ -145,18 +153,19 @@ The split type system keeps the pixel personality in prominent controls while ma
 
 ## 🎨 Design tokens
 
-Cocoa's palette. When touching the UI, please pick from these colors instead of inventing new ones.
+The **Moon Studio** palette. A deep-indigo night with exactly three signal colours — mint for active, amber for waiting, pink for recording. When touching the UI, please pick from these instead of inventing new ones.
 
 ```
-ink-dark   #3A2F4A      cream      #F6ECD6
-ink        #4A3C5C      cream-deep #ECDCB8
-ink-soft   #7A6A8A      paper      #FFF8E7
-                        coral      #F5A598
-mint       #B9E4C9      coral-deep #E87F6E
-mint-deep  #87CAA4      lilac      #C9B8E8
-gold       #FFD97A      lilac-deep #A48DD0
+night      #14122B      cream      #FFFBEA
+hero       #191640      lilac      #C9C2F0
+panel-sel  #241E5C      mute       #8E86C9
+line       #2E2856      ink        #0C0A1C
+line-soft  #3A3470
+well       #241F45      mint       #7BE3C4   active
+                        amber      #FFD86B   waiting
+moon-lit   #FFE9A8      pink       #FF5C7A   recording
+cat-fur    #B9B1E6      pink-soft  #FF8FB8
 ```
-
 ---
 
 ## 🤝 Contributing

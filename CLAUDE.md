@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Cocoa Recorder (GitHub repository `darkdarkcocoa/cocoa-recorder`) is a single-window WPF desktop app for Windows that records the system audio output (loopback) and saves it as WAV or MP3, wrapped in a pixel-art UI. Target framework is `net9.0-windows`; the project does not build on non-Windows platforms.
 
+The look is **Moon Studio**: a deep-indigo night sky with a pixel moon, a pixel cat sitting on it, and exactly three signal colors — mint for active, amber for waiting, pink for recording.
+
 ## Commands
 
 ```powershell
@@ -24,18 +26,21 @@ There is no test project — no `dotnet test` to run.
 
 ## Architecture
 
-The entire app is three source files plus one XAML resource dictionary. Don't go looking for view-models, services, or DI — there are none.
+Five source files plus one XAML resource dictionary. Don't go looking for view-models, services, or DI — there are none.
 
-- **`AudioRecorder.cs`** — capture/encoding engine. Uses `WasapiLoopbackCapture` to grab the render endpoint, writes a temp WAV via `WaveFileWriter`, then on stop either `File.Copy`s to the final path (WAV) or transcodes through `LameMP3FileWriter` (MP3). Surfaces completion through the `RecordingFinished` event; the UI never touches NAudio types directly except `MMDevice` for the device picker. The only NuGet dependencies for the whole app are `NAudio` and `NAudio.Lame` — don't add more without a strong reason.
-- **`MainWindow.xaml` / `MainWindow.xaml.cs`** — every interactive feature lives here: transport (record/stop/pause), 56-bar live waveform, 18-cell input meter, mascot sprite drawing, recordings library scan/play/delete, custom window chrome (drag, double-click maximize, grip resize). Animations are driven by three `DispatcherTimer`s (UI 50ms, waveform 60ms, blink 500ms). New installs save to `Music\Cocoa Recorder\CocoaRecorder_yyyyMMdd_HHmmss.{wav|mp3}`; existing `Music\Reccoo` libraries remain in place.
-- **`App.xaml`** — the design system. All pixel-art colors (cream/coral/mint/lilac/gold/ink palette), brushes, and the chunky button/combo/scrollbar styles with 4-px offset shadows are defined here as a single `ResourceDictionary`. Anything that affects look-and-feel almost certainly belongs in this file, not in `MainWindow.xaml`.
+- **`AudioRecorder.cs`** — capture/encoding engine. Uses `WasapiLoopbackCapture` to grab the render endpoint, writes a temp WAV via `WaveFileWriter`, then on stop either `File.Copy`s to the final path (WAV) or transcodes through `LameMP3FileWriter` (MP3). Surfaces completion through the `RecordingFinished` event; the UI never touches NAudio types directly except `MMDevice` for the device picker. `CapturedBytes` and `SampleRate` exist only so the hero can show a running size and the endpoint's rate. The only NuGet dependencies for the whole app are `NAudio` and `NAudio.Lame` — don't add more without a strong reason.
+- **`Mascot.cs`** — Cocoa, a 22 × 24 pixel cat. `MascotMood` (Idle / Countdown / Recording / Paused) picks a pose (sit / alert / sleep) and a collar color.
+- **`NightSky.cs`** — the hero backdrop: a 31 × 31 pixel crescent moon with craters, plus 130 dust stars and 11 cross stars from a seeded LCG (`SkySeed`), each twinkling on its own clock. Same seed always gives the same sky.
+- **`MainWindow.xaml` / `MainWindow.xaml.cs`** — every interactive feature lives here: four nav tabs (record / library / settings / help; help is a full-window four-step tour, reachable with F1, where clicking a step changes the cat's pose and collar), the hero (status, 118-px timer, transport, 56-bar waveform, full-bleed countdown overlay), 18-cell input meter, recordings library scan/rename/drag-export (clicking a row opens it and pops out play / reveal-in-folder / delete), custom window chrome (drag, double-click maximize, grip resize). The private `Transport` enum is the single source of truth — one state decides the hero color, both transport buttons, the cat's pose, the status dot and which controls lock. Idle motion (sky twinkle, moon breathing, the cat's drift and tail sway, the status dot) runs as WPF animations; the two `DispatcherTimer`s (UI 50ms, waveform 60ms) drive only what depends on live audio — the timer text, the waveform, the input meter, and the cat's vertical lift while recording. New installs save to `Music\Cocoa Recorder\CocoaRecorder_yyyyMMdd_HHmmss.{wav|mp3}`; existing `Music\Reccoo` libraries remain in place.
+- **`App.xaml`** — the design system. The night palette (night/hero/panel/line grounds, cream/lilac/mute text, mint/amber/pink signals, moon and cat colors), brushes, and the flat 2-px-border button/toggle/combo/scrollbar styles are defined here as a single `ResourceDictionary`. Anything that affects look-and-feel almost certainly belongs in this file, not in `MainWindow.xaml`.
 
-The mascot ("Cocoa") is not an image asset — it's drawn pixel-by-pixel from `MainWindow.xaml.cs` into a `Canvas`, switching expressions based on a `MascotMood` enum.
+Nothing in the hero is an image asset — the cat, the moon and every star are drawn cell by cell into `Canvas` elements from `Mascot.cs` and `NightSky.cs`.
 
 ## Conventions
 
 - The app is bilingual: UI strings, mascot speech, and many comments are Korean. Keep that voice when editing user-facing text.
 - Fonts are embedded as explicit resources in the csproj. `NeoDunggeunmo` handles display text in both languages — its 15-px grid keeps strokes even at the sizes this app uses, and it covers all 11,172 Hangul syllables plus Latin. `SUIT` handles dense Korean/English UI copy, and `Pixelify Sans` remains dedicated to the large timer.
-- `design/` holds Claude-generated design mocks and is gitignored; treat it as scratch, not source.
+- Section labels in the settings rail (SOURCE, FORMAT, INPUT LEVEL, COUNTDOWN, SAVE TO) stay English on purpose — they are part of the visual style. Everything a sentence (tabs, status, buttons, help, mascot lines) goes through `Localization.cs`.
+- `design/` holds Claude-generated design mocks and the imported Claude Design source, and is gitignored; treat it as scratch, not source.
 - `Nullable` and `ImplicitUsings` are both enabled — match that style (no `using System;` clutter, honor nullable annotations).
 - When searching with Glob/Grep, ignore `obj/**/*_wpftmp.*.cs` and `obj/**/*.g.cs` — these are WPF/MSBuild-generated intermediates, not real source.

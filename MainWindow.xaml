@@ -1,4 +1,4 @@
-<Window x:Class="CocoaRecorder.MainWindow"
+﻿<Window x:Class="CocoaRecorder.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -7,873 +7,1181 @@
         mc:Ignorable="d"
         Title="Cocoa Recorder"
         Width="1216" Height="852"
-        MinWidth="1080" MinHeight="840"
+        MinWidth="1080" MinHeight="820"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
-        AllowsTransparency="True"
-        Background="Transparent"
+        AllowsTransparency="False"
+        Background="{StaticResource NightBrush}"
         ResizeMode="CanResizeWithGrip"
         FontFamily="{StaticResource UiFont}"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
         TextOptions.TextFormattingMode="Display">
 
-    <!-- ===== Outer window shell — pixel border + 6px offset shadow ===== -->
-    <Grid Margin="6">
-        <!-- Drop shadow (offset down) -->
-        <Rectangle Fill="{StaticResource InkDarkBrush}" Margin="0,6,0,0"/>
+    <!-- 레이어드 창(AllowsTransparency)은 GPU 합성에서 빠져 움직임이 끊긴다.
+         WindowChrome 으로 기본 테두리만 걷어내면 테두리 없는 창을 그대로 두면서
+         하드웨어 가속과 제대로 된 리사이즈 · 최대화를 함께 얻는다. -->
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0"
+                      CornerRadius="0"
+                      GlassFrameThickness="0"
+                      ResizeBorderThickness="6"
+                      UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
 
-        <!-- Window body -->
-        <Border x:Name="WindowBody"
-                BorderBrush="{StaticResource InkDarkBrush}"
-                BorderThickness="3"
-                Background="{StaticResource CreamBrush}"
-                Margin="0,0,0,6"
-                SnapsToDevicePixels="True">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="36"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+    <Window.Resources>
 
-                <!-- ============== Title bar ============== -->
-                <Border Grid.Row="0"
-                        Background="{StaticResource AccentBrush}"
-                        BorderBrush="{StaticResource InkDarkBrush}"
-                        BorderThickness="0,0,0,3"
-                        MouseLeftButtonDown="TitleBar_MouseLeftButtonDown"
-                        SnapsToDevicePixels="True">
-                    <Grid>
+        <!-- 고른 줄의 버튼 묶음이 나오는 움직임.
+             세 개를 따로 움직이면 박자가 어긋나 덜그럭거린다. 하나의 띠로 묶어
+             오른쪽에서 왼쪽으로 흘려보내고, 흐림이 걷히면서 자리를 잡는다.
+             튕김 없이 감속만 하는 곡선이라 물 흐르듯 멎는다. -->
+        <Storyboard x:Key="RowActionsPop">
+            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RowActions" Storyboard.TargetProperty="Visibility">
+                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{x:Static Visibility.Visible}"/>
+            </ObjectAnimationUsingKeyFrames>
+            <DoubleAnimation Storyboard.TargetName="RowActions" Storyboard.TargetProperty="Opacity"
+                             From="0" To="1" Duration="0:0:0.34">
+                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="RowActions"
+                             Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                             From="44" To="0" Duration="0:0:0.55">
+                <DoubleAnimation.EasingFunction><QuinticEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
+        <!-- 닫을 때는 왔던 길로 되돌아 흘러 나간다. -->
+        <Storyboard x:Key="RowActionsHide">
+            <DoubleAnimation Storyboard.TargetName="RowActions"
+                             Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                             To="44" Duration="0:0:0.28">
+                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseIn"/></DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="RowActions" Storyboard.TargetProperty="Opacity"
+                             To="0" Duration="0:0:0.28"/>
+            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RowActions" Storyboard.TargetProperty="Visibility">
+                <DiscreteObjectKeyFrame KeyTime="0:0:0.28" Value="{x:Static Visibility.Collapsed}"/>
+            </ObjectAnimationUsingKeyFrames>
+        </Storyboard>
+
+        <!-- 튀어나오는 34×34 동작 버튼 — 테두리 없이 색면만 -->
+        <Style x:Key="RowActionButton" TargetType="Button">
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <!-- 커지는 동안 가장자리가 정수 픽셀로 튀지 않도록 스냅을 끈다. -->
+            <Setter Property="SnapsToDevicePixels" Value="False"/>
+            <Setter Property="UseLayoutRounding" Value="False"/>
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource PixelFocusVisual}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.82"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.66"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ============================================================
+             보관함 한 줄 — 왼쪽 5px 색띠가 그 파일의 표식이다.
+             줄을 누르면 재생 · 폴더 · 삭제 세 버튼이 통통 튀어나온다.
+             record 탭과 library 탭이 같은 템플릿을 나눠 쓴다.
+             ============================================================ -->
+        <DataTemplate x:Key="TapeRow">
+            <Border x:Name="RowBody"
+                    Background="{StaticResource PanelBrush}"
+                    BorderBrush="{Binding TapeColor}"
+                    BorderThickness="5,0,0,0"
+                    Padding="14,12"
+                    Margin="0,0,0,9"
+                    Cursor="Hand"
+                    SnapsToDevicePixels="True"
+                    MouseLeftButtonDown="Card_MouseLeftButtonDown"
+                    MouseLeftButtonUp="Card_MouseLeftButtonUp"
+                    MouseMove="Card_MouseMove"
+                    ToolTip="{DynamicResource L_CardTooltip}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" MinHeight="34">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- top highlight stripe -->
-                        <Rectangle Grid.ColumnSpan="3" Fill="#80FFFFFF" Height="2" VerticalAlignment="Top"/>
-                        <!-- bottom deep stripe (inside the bar above the 3px ink border) -->
-                        <Rectangle Grid.ColumnSpan="3" Fill="{StaticResource AccentDeepBrush}" Height="3" VerticalAlignment="Bottom"/>
+                        <Rectangle Grid.Column="0" Width="10" Height="10"
+                                   Fill="{Binding TapeColor}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,14,0"
+                                   SnapsToDevicePixels="True"/>
 
-                        <!-- left game-boy speaker dots -->
-                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
-                            <Border Width="10" Height="10" Background="{StaticResource InkDarkBrush}" Margin="0,0,4,0">
-                                <Border Background="{StaticResource AccentSoftBrush}" Margin="2"/>
-                            </Border>
-                            <Border Width="10" Height="10" Background="{StaticResource InkDarkBrush}" Margin="0,0,4,0">
-                                <Border Background="{StaticResource AccentSoftBrush}" Margin="2"/>
-                            </Border>
-                            <Border Width="10" Height="10" Background="{StaticResource InkDarkBrush}">
-                                <Border Background="{StaticResource AccentSoftBrush}" Margin="2"/>
-                            </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <Grid MouseLeftButtonDown="RecordingName_DoubleClick">
+                                <TextBlock Text="{Binding Name}"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource CreamBrush}"
+                                           TextTrimming="CharacterEllipsis">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsRenaming}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                         FontSize="14"
+                                         FontWeight="SemiBold"
+                                         Foreground="{StaticResource CreamBrush}"
+                                         Background="{StaticResource NightBrush}"
+                                         BorderBrush="{StaticResource MintBrush}"
+                                         BorderThickness="2"
+                                         CaretBrush="{StaticResource MintBrush}"
+                                         SelectionBrush="{StaticResource PanelSelBrush}"
+                                         Padding="4,2"
+                                         KeyDown="RenameBox_KeyDown"
+                                         LostKeyboardFocus="RenameBox_LostFocus"
+                                         Loaded="RenameBox_Loaded"
+                                         IsVisibleChanged="RenameBox_VisibleChanged">
+                                    <TextBox.Style>
+                                        <Style TargetType="TextBox">
+                                            <!-- 기본값을 Setter 로 둬야 아래 트리거가 이긴다.
+                                                 요소에 직접 Visibility 를 쓰면 트리거보다 우선해서 영영 안 열린다. -->
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsRenaming}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
+                            </Grid>
+                            <TextBlock Text="{Binding Meta}"
+                                       FontFamily="{StaticResource DisplayFont}"
+                                       FontSize="11"
+                                       Foreground="{StaticResource Mute2Brush}"
+                                       Margin="0,4,0,0"
+                                       TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
 
-                        <TextBlock Grid.Column="1"
-                                   Text="{DynamicResource L_WindowTitle}"
-                                   Foreground="{StaticResource InkDarkBrush}"
-                                   FontFamily="{StaticResource DisplayFont}"
-                                   FontSize="16"
-                                   FontWeight="Bold"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   TextTrimming="CharacterEllipsis"
-                                   Margin="20,0"/>
+                        <!-- 고른 줄에서만 나타난다. 세 버튼은 한 덩어리로 함께 흐른다. -->
+                        <StackPanel x:Name="RowActions" Grid.Column="2" Orientation="Horizontal"
+                                    VerticalAlignment="Center" Margin="12,0,0,0"
+                                    Visibility="Collapsed">
+                            <StackPanel.RenderTransform>
+                                <TranslateTransform/>
+                            </StackPanel.RenderTransform>
+                            <Button x:Name="ActPlay"
+                                    Style="{StaticResource RowActionButton}"
+                                    Background="{StaticResource MintBrush}"
+                                    Tag="{Binding Path}"
+                                    Click="PlayRecording_Click"
+                                    Margin="0,0,8,0">
+                                <Grid>
+                                    <Path x:Name="PlayGlyph"
+                                          Data="M 0,0 L 11,7 L 0,14 Z"
+                                          Fill="{StaticResource NightBrush}"
+                                          Margin="3,0,0,0"/>
+                                    <StackPanel x:Name="PauseGlyph" Orientation="Horizontal" Visibility="Collapsed">
+                                        <Rectangle Width="4" Height="14" Fill="{StaticResource NightBrush}" Margin="0,0,4,0" SnapsToDevicePixels="True"/>
+                                        <Rectangle Width="4" Height="14" Fill="{StaticResource NightBrush}" SnapsToDevicePixels="True"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Button>
 
-                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
-                            <RadioButton x:Name="KorToggle" Style="{StaticResource TitleLangToggle}" Content="KOR" Width="40" GroupName="UiLang" Checked="LangToggle_Checked" ToolTip="한국어"/>
-                            <RadioButton x:Name="EnToggle" Style="{StaticResource TitleLangToggle}" Content="EN" Width="34" GroupName="UiLang" Checked="LangToggle_Checked" Margin="-2,0,10,0" ToolTip="English"/>
-                            <Button Style="{StaticResource TitleBarButton}" Content="_" Click="Minimize_Click" Margin="0,0,6,0"/>
-                            <Button Style="{StaticResource TitleBarButton}" Content="▢" Click="Maximize_Click" Margin="0,0,6,0"/>
-                            <Button Style="{StaticResource TitleCloseButton}" Content="✕" Click="Close_Click"/>
+                            <Button x:Name="ActFolder"
+                                    Style="{StaticResource RowActionButton}"
+                                    Background="{StaticResource AmberBrush}"
+                                    Tag="{Binding Path}"
+                                    Click="RevealRecording_Click"
+                                    Margin="0,0,8,0">
+                                <Canvas Width="18" Height="18">
+                                    <Rectangle Canvas.Left="0" Canvas.Top="1" Width="8"  Height="3"  Fill="{StaticResource NightBrush}"/>
+                                    <Rectangle Canvas.Left="0" Canvas.Top="4" Width="18" Height="13" Fill="{StaticResource NightBrush}"/>
+                                    <Rectangle Canvas.Left="2" Canvas.Top="7" Width="14" Height="2"  Fill="{StaticResource AmberBrush}"/>
+                                </Canvas>
+                            </Button>
+
+                            <Button x:Name="ActDelete"
+                                    Style="{StaticResource RowActionButton}"
+                                    Background="{StaticResource PinkSoftBrush}"
+                                    Tag="{Binding Path}"
+                                    Click="DeleteRecording_Click">
+                                <Canvas Width="16" Height="21">
+                                    <Rectangle Canvas.Left="6" Canvas.Top="0"  Width="4"  Height="3"  Fill="{StaticResource NightBrush}"/>
+                                    <Rectangle Canvas.Left="0" Canvas.Top="3"  Width="16" Height="3"  Fill="{StaticResource NightBrush}"/>
+                                    <Rectangle Canvas.Left="2" Canvas.Top="8"  Width="12" Height="13" Fill="{StaticResource NightBrush}"/>
+                                    <Rectangle Canvas.Left="5" Canvas.Top="11" Width="2"  Height="7"  Fill="{StaticResource PinkSoftBrush}"/>
+                                    <Rectangle Canvas.Left="9" Canvas.Top="11" Width="2"  Height="7"  Fill="{StaticResource PinkSoftBrush}"/>
+                                </Canvas>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- 재생 중일 때만 나오는 진행 막대 -->
+                    <Rectangle Grid.Row="1"
+                               Height="2"
+                               Margin="0,9,0,0"
+                               Fill="{StaticResource LineBrush}"
+                               Visibility="{Binding IsPlaying, Converter={StaticResource BoolToVis}}"/>
+                    <Rectangle Grid.Row="1"
+                               Height="2"
+                               Margin="0,9,0,0"
+                               HorizontalAlignment="Stretch"
+                               Fill="{StaticResource MintBrush}"
+                               RenderTransformOrigin="0,0"
+                               Visibility="{Binding IsPlaying, Converter={StaticResource BoolToVis}}">
+                        <Rectangle.RenderTransform>
+                            <ScaleTransform ScaleX="{Binding Progress}"/>
+                        </Rectangle.RenderTransform>
+                    </Rectangle>
+                </Grid>
+            </Border>
+            <DataTemplate.Triggers>
+                <Trigger SourceName="RowBody" Property="IsMouseOver" Value="True">
+                    <Setter TargetName="RowBody" Property="Background" Value="{StaticResource PanelSelBrush}"/>
+                </Trigger>
+                <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                    <Setter TargetName="PlayGlyph" Property="Visibility" Value="Collapsed"/>
+                    <Setter TargetName="PauseGlyph" Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                    <Setter TargetName="RowBody" Property="Background" Value="{StaticResource PanelSelBrush}"/>
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard Storyboard="{StaticResource RowActionsPop}"/>
+                    </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <BeginStoryboard Storyboard="{StaticResource RowActionsHide}"/>
+                    </DataTrigger.ExitActions>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- 도움말의 단계 한 줄 — 고르면 테두리가 그 단계의 강조색으로 바뀐다. -->
+        <Style x:Key="HelpStepButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PanelSelBrush}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="16,14"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource PixelFocusVisual}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="2"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource PanelSelBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 도움말의 단축키 한 줄 -->
+        <Style x:Key="KeyCap" TargetType="Border">
+            <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="Width" Value="86"/>
+            <Setter Property="Margin" Value="0,0,14,0"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
+
+    </Window.Resources>
+
+    <Border x:Name="WindowBody"
+            Background="{StaticResource NightBrush}"
+            BorderBrush="{StaticResource LineBrush}"
+            BorderThickness="3"
+            SnapsToDevicePixels="True">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- ============================================================
+                 타이틀바 — 이름, 탭 네 개, 언어, 창 컨트롤
+                 ============================================================ -->
+            <Border Grid.Row="0"
+                    Height="42"
+                    BorderBrush="{StaticResource LineBrush}"
+                    BorderThickness="0,0,0,2"
+                    Background="{StaticResource NightBrush}"
+                    MouseLeftButtonDown="TitleBar_MouseLeftButtonDown"
+                    SnapsToDevicePixels="True">
+                <Grid Margin="18,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0"
+                               Text="✦ cocoa"
+                               FontFamily="{StaticResource DisplayFont}"
+                               FontSize="15"
+                               Foreground="{StaticResource AmberBrush}"
+                               VerticalAlignment="Center"/>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                VerticalAlignment="Stretch" Margin="20,0,0,0">
+                        <RadioButton x:Name="TabRecord" Style="{StaticResource NavTab}" GroupName="Nav"
+                                     IsChecked="True" Content="{DynamicResource L_NavRecord}"
+                                     Checked="Tab_Checked"/>
+                        <RadioButton x:Name="TabLibrary" Style="{StaticResource NavTab}" GroupName="Nav"
+                                     Content="{DynamicResource L_NavLibrary}" Checked="Tab_Checked"/>
+                        <RadioButton x:Name="TabSettings" Style="{StaticResource NavTab}" GroupName="Nav"
+                                     Content="{DynamicResource L_NavSettings}" Checked="Tab_Checked"/>
+                        <RadioButton x:Name="TabHelp" Style="{StaticResource NavTab}" GroupName="Nav"
+                                     BorderBrush="{StaticResource AmberBrush}"
+                                     Content="{DynamicResource L_NavHelp}" Checked="Tab_Checked"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                        <RadioButton x:Name="KorToggle" Style="{StaticResource LangToggle}" GroupName="Lang"
+                                     Content="KOR" Checked="LangToggle_Checked"/>
+                        <RadioButton x:Name="EnToggle" Style="{StaticResource LangToggle}" GroupName="Lang"
+                                     Content="EN" Checked="LangToggle_Checked" Margin="2,0,9,0"/>
+                        <Button Style="{StaticResource TitleBarButton}" Content="_" Click="Minimize_Click" Margin="0,0,4,0"/>
+                        <Button Style="{StaticResource TitleBarButton}" Content="▢" Click="Maximize_Click" Margin="0,0,4,0"/>
+                        <Button Style="{StaticResource TitleCloseButton}" Content="✕" Click="Close_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ============================================================
+                 히어로 — 밤하늘, 달 위의 코코아, 시간, 트랜스포트, 파형
+                 ============================================================ -->
+            <Border Grid.Row="1"
+                    x:Name="HeroBackdrop"
+                    Height="356"
+                    Background="{StaticResource HeroBrush}"
+                    BorderBrush="{StaticResource LineBrush}"
+                    BorderThickness="0,0,0,2"
+                    ClipToBounds="True"
+                    SnapsToDevicePixels="True">
+                <Grid>
+
+                    <!-- 별먼지와 십자 별 -->
+                    <Canvas x:Name="StarCanvas" IsHitTestVisible="False"/>
+
+                    <!-- 달과 그 위에 앉은 코코아 -->
+                    <Canvas Width="186" Height="186"
+                            HorizontalAlignment="Right" VerticalAlignment="Top"
+                            Margin="0,44,96,0"
+                            IsHitTestVisible="False">
+                        <Ellipse x:Name="MoonGlow" Canvas.Left="-72" Canvas.Top="-72" Width="330" Height="330" Opacity="0.55"
+                                 RenderTransformOrigin="0.5,0.5">
+                            <Ellipse.RenderTransform>
+                                <ScaleTransform x:Name="MoonGlowScale"/>
+                            </Ellipse.RenderTransform>
+                            <Ellipse.Fill>
+                                <RadialGradientBrush RadiusX="0.707" RadiusY="0.707">
+                                    <GradientStop Offset="0"    Color="#4DFFE9A8"/>
+                                    <GradientStop Offset="0.42" Color="#1FFFD86B"/>
+                                    <GradientStop Offset="0.68" Color="#00FFD86B"/>
+                                    <GradientStop Offset="1"    Color="#00FFD86B"/>
+                                </RadialGradientBrush>
+                            </Ellipse.Fill>
+                        </Ellipse>
+                        <Ellipse Canvas.Left="-16" Canvas.Top="-16" Width="218" Height="218">
+                            <Ellipse.Fill>
+                                <RadialGradientBrush RadiusX="0.707" RadiusY="0.707">
+                                    <GradientStop Offset="0"   Color="#38FFF8DC"/>
+                                    <GradientStop Offset="0.6" Color="#00FFF8DC"/>
+                                    <GradientStop Offset="1"   Color="#00FFF8DC"/>
+                                </RadialGradientBrush>
+                            </Ellipse.Fill>
+                        </Ellipse>
+
+                        <Canvas x:Name="MoonCanvas" Canvas.Left="0" Canvas.Top="0"/>
+                        <Canvas x:Name="MoonSparks" Canvas.Left="0" Canvas.Top="0"/>
+
+                        <!-- 달 아래 그림자 — 고양이가 표면에 붙어 보이게 한다 -->
+                        <Ellipse Canvas.Left="48" Canvas.Top="156" Width="88" Height="14">
+                            <Ellipse.Fill>
+                                <RadialGradientBrush RadiusX="0.707" RadiusY="0.707">
+                                    <GradientStop Offset="0"    Color="#730C0A1C"/>
+                                    <GradientStop Offset="0.72" Color="#000C0A1C"/>
+                                    <GradientStop Offset="1"    Color="#000C0A1C"/>
+                                </RadialGradientBrush>
+                            </Ellipse.Fill>
+                        </Ellipse>
+
+                        <Canvas x:Name="MascotCanvas" Canvas.Left="34" Canvas.Top="44" Width="110" Height="120">
+                            <Canvas.RenderTransform>
+                                <TranslateTransform x:Name="MascotBob"/>
+                            </Canvas.RenderTransform>
+                        </Canvas>
+                    </Canvas>
+
+                    <!-- 상태 · 시간 · 트랜스포트 -->
+                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="56,38,0,0">
+
+                        <StackPanel Orientation="Horizontal">
+                            <Border x:Name="StatusDot" Width="12" Height="12"
+                                    Background="{StaticResource MintBrush}"
+                                    VerticalAlignment="Center"
+                                    SnapsToDevicePixels="True"/>
+                            <TextBlock x:Name="StatusLabel"
+                                       Text="{DynamicResource L_StatusIdle}"
+                                       FontFamily="{StaticResource DisplayFont}"
+                                       FontSize="14"
+                                       Foreground="{StaticResource LilacBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="10,0,0,0"/>
+                            <TextBlock x:Name="FormatInfoText"
+                                       Text=" · WAV"
+                                       FontFamily="{StaticResource DisplayFont}"
+                                       FontSize="14"
+                                       Foreground="{StaticResource MuteBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="6,0,0,0"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <TextBlock x:Name="TimerMin" Text="00"
+                                       FontFamily="{StaticResource PixelMonoFont}"
+                                       FontSize="118" LineHeight="104" LineStackingStrategy="BlockLineHeight"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource CreamBrush}"
+                                       VerticalAlignment="Bottom"/>
+                            <TextBlock x:Name="TimerColon" Text=":"
+                                       FontFamily="{StaticResource PixelMonoFont}"
+                                       FontSize="88" LineHeight="104" LineStackingStrategy="BlockLineHeight"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource AmberBrush}"
+                                       VerticalAlignment="Bottom"
+                                       Margin="6,0"/>
+                            <TextBlock x:Name="TimerSec" Text="00"
+                                       FontFamily="{StaticResource PixelMonoFont}"
+                                       FontSize="118" LineHeight="104" LineStackingStrategy="BlockLineHeight"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource CreamBrush}"
+                                       VerticalAlignment="Bottom"/>
+                            <TextBlock x:Name="TimerCs" Text=".00"
+                                       FontFamily="{StaticResource PixelMonoFont}"
+                                       FontSize="36" LineHeight="40" LineStackingStrategy="BlockLineHeight"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource MuteBrush}"
+                                       VerticalAlignment="Bottom"
+                                       Margin="10,0,0,12"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,22,0,0">
+                            <Button x:Name="PrimaryButton"
+                                    Style="{StaticResource TransportPrimary}"
+                                    Click="PrimaryButton_Click">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Ellipse x:Name="PrimaryDot" Width="18" Height="18"
+                                             Fill="{StaticResource NightBrush}"
+                                             VerticalAlignment="Center"
+                                             Margin="0,0,12,0"/>
+                                    <TextBlock x:Name="PrimaryText" Text="RECORD" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <Button x:Name="SecondaryButton"
+                                    Style="{StaticResource TransportSecondary}"
+                                    Click="SecondaryButton_Click"
+                                    Visibility="Collapsed"
+                                    Margin="14,0,0,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <StackPanel x:Name="SecondaryBars" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,9,0">
+                                        <Rectangle Width="5" Height="18" Fill="{StaticResource LilacBrush}" Margin="0,0,4,0" SnapsToDevicePixels="True"/>
+                                        <Rectangle Width="5" Height="18" Fill="{StaticResource LilacBrush}" SnapsToDevicePixels="True"/>
+                                    </StackPanel>
+                                    <Rectangle x:Name="SecondarySquare" Width="16" Height="16"
+                                               Fill="{StaticResource LilacBrush}"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,9,0"
+                                               Visibility="Collapsed"
+                                               SnapsToDevicePixels="True"/>
+                                    <TextBlock x:Name="SecondaryText" Text="PAUSE" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <TextBlock x:Name="SizeText" Text="0.0 MB"
+                                       FontFamily="{StaticResource DisplayFont}"
+                                       FontSize="12"
+                                       Foreground="{StaticResource MuteBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="14,0,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- 코코아의 한마디 — 고양이 왼편에서 꼬리로 고양이를 가리킨다.
+                         꼬리는 계단 세 칸으로 깎아 픽셀 결을 맞췄다. -->
+                    <StackPanel x:Name="SpeechBubble" Orientation="Horizontal"
+                                HorizontalAlignment="Right" VerticalAlignment="Top"
+                                Margin="0,100,260,0"
+                                IsHitTestVisible="False">
+                        <Border Background="{StaticResource PanelSelBrush}"
+                                BorderBrush="{StaticResource LineBrush}"
+                                BorderThickness="2"
+                                Padding="13,10"
+                                MaxWidth="250"
+                                SnapsToDevicePixels="True">
+                            <TextBlock x:Name="MascotSpeech"
+                                       Text="{DynamicResource L_Hello}"
+                                       FontSize="13"
+                                       LineHeight="19"
+                                       Foreground="{StaticResource LilacBrush}"
+                                       TextWrapping="Wrap"/>
+                        </Border>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="-2,0,0,0">
+                            <Rectangle Width="6" Height="18" Fill="{StaticResource PanelSelBrush}" SnapsToDevicePixels="True"/>
+                            <Rectangle Width="6" Height="12" Fill="{StaticResource PanelSelBrush}" SnapsToDevicePixels="True"/>
+                            <Rectangle Width="6" Height="6"  Fill="{StaticResource PanelSelBrush}" SnapsToDevicePixels="True"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- 파형 — 히어로 바닥에 깔린다 -->
+                    <ItemsControl x:Name="WaveformHost"
+                                  Height="104"
+                                  Margin="12,0"
+                                  VerticalAlignment="Bottom"
+                                  IsHitTestVisible="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Rows="1"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Rectangle Width="19"
+                                           Height="{Binding Height}"
+                                           Fill="{Binding Fill}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Bottom"
+                                           SnapsToDevicePixels="True"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- 카운트다운 — 히어로 전체를 덮는다 -->
+                    <Grid x:Name="CountdownOverlay"
+                          Background="{StaticResource OverlayBrush}"
+                          Visibility="Collapsed">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock x:Name="CountdownDigit" Text="3"
+                                       FontFamily="{StaticResource PixelMonoFont}"
+                                       FontSize="190" LineHeight="170" LineStackingStrategy="BlockLineHeight"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource AmberBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="{DynamicResource L_CountdownReady}"
+                                       FontFamily="{StaticResource DisplayFont}"
+                                       FontSize="15"
+                                       Foreground="{StaticResource LilacBrush}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,10,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- ============================================================
+                 아래 영역 — 왼쪽은 탭이 바꾸는 화면, 오른쪽은 항상 있는 설정 레일
+                 ============================================================ -->
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="348"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0"
+                        BorderBrush="{StaticResource LineBrush}"
+                        BorderThickness="0,0,2,0"
+                        SnapsToDevicePixels="True">
+                    <Grid Margin="24,20">
+
+                        <!-- ===== record 탭 ===== -->
+                        <DockPanel x:Name="RecordPanel">
+                            <Grid DockPanel.Dock="Top" Margin="0,0,0,14">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                    <TextBlock Text="TONIGHT'S TAPES" Style="{StaticResource PanelTitle}"/>
+                                    <TextBlock x:Name="LibraryFolderHint"
+                                               FontSize="12"
+                                               Foreground="{StaticResource MuteBrush}"
+                                               VerticalAlignment="Center"
+                                               MaxWidth="360"
+                                               TextTrimming="CharacterEllipsis"
+                                               Margin="10,0,0,0"/>
+                                </StackPanel>
+                                <TextBlock Text="{DynamicResource L_ShortcutHint}"
+                                           Style="{StaticResource HintText}"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+
+                            <!-- 최근 것만 보여주므로, 나머지가 어디 있는지 알려 준다 -->
+                            <TextBlock x:Name="RecentMoreText"
+                                       DockPanel.Dock="Bottom"
+                                       FontSize="12"
+                                       Foreground="{StaticResource MuteBrush}"
+                                       Margin="0,12,0,0"
+                                       Visibility="Collapsed"/>
+
+                            <Grid>
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,6,0">
+                                    <ItemsControl x:Name="RecentList" ItemTemplate="{StaticResource TapeRow}"/>
+                                </ScrollViewer>
+
+                                <!-- 아직 아무것도 없을 때 -->
+                                <Grid x:Name="EmptyStateText" Visibility="Collapsed">
+                                    <Rectangle Stroke="{StaticResource LineBrush}"
+                                               StrokeThickness="2"
+                                               StrokeDashArray="4 4"
+                                               SnapsToDevicePixels="True"/>
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <Rectangle Width="26" Height="26" Stroke="{StaticResource LineSoftBrush}" StrokeThickness="2" Margin="0,0,10,0"/>
+                                            <Rectangle Width="26" Height="26" Stroke="{StaticResource LineSoftBrush}" StrokeThickness="2" Margin="0,0,10,0"/>
+                                            <Rectangle Width="26" Height="26" Stroke="{StaticResource LineSoftBrush}" StrokeThickness="2"/>
+                                        </StackPanel>
+                                        <TextBlock Text="{DynamicResource L_EmptyTitle}"
+                                                   FontFamily="{StaticResource DisplayFont}"
+                                                   FontSize="14"
+                                                   Foreground="{StaticResource LilacBrush}"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,14,0,0"/>
+                                        <TextBlock Text="{DynamicResource L_EmptyHint}"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource MuteBrush}"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,6,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </DockPanel>
+
+                        <!-- ===== library 탭 ===== -->
+                        <DockPanel x:Name="LibraryPanel" Visibility="Collapsed">
+                            <Grid DockPanel.Dock="Top" Margin="0,0,0,14">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                    <TextBlock Text="LIBRARY" Style="{StaticResource PanelTitle}"/>
+                                    <TextBlock x:Name="RecordingCountText"
+                                               FontFamily="{StaticResource DisplayFont}"
+                                               FontSize="12"
+                                               Foreground="{StaticResource MuteBrush}"
+                                               VerticalAlignment="Center"
+                                               Margin="10,0,0,0"/>
+                                </StackPanel>
+                                <TextBlock Text="{DynamicResource L_CardTooltip}"
+                                           Style="{StaticResource HintText}"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid>
+                            <StackPanel x:Name="LibraryEmptyText"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        Visibility="Collapsed">
+                                <TextBlock Text="{DynamicResource L_EmptyTitle}"
+                                           FontFamily="{StaticResource DisplayFont}"
+                                           FontSize="14"
+                                           Foreground="{StaticResource LilacBrush}"
+                                           HorizontalAlignment="Center"/>
+                                <TextBlock Text="{DynamicResource L_EmptyHint}"
+                                           FontSize="12"
+                                           Foreground="{StaticResource MuteBrush}"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,6,0,0"/>
+                            </StackPanel>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,6,0">
+                                <!-- 시안의 Moon Studio 는 보관함도 한 줄씩 내려가는 목록이다.
+                                     VerticalAlignment 를 Top 으로 두지 않으면 ScrollViewer 가
+                                     내용을 세로로 늘려 칸이 화면 끝까지 길어진다. -->
+                                <ItemsControl x:Name="RecordingsList"
+                                              ItemTemplate="{StaticResource TapeRow}"
+                                              VerticalAlignment="Top"/>
+                            </ScrollViewer>
+                            </Grid>
+                        </DockPanel>
+
+                        <!-- ===== settings 탭 — 레일에 없는 세부 설정 ===== -->
+                        <DockPanel x:Name="SettingsPanel" Visibility="Collapsed">
+                            <TextBlock DockPanel.Dock="Top" Text="SETTINGS" Style="{StaticResource PanelTitle}" Margin="0,0,0,18"/>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,6,0">
+                                <StackPanel MaxWidth="520" HorizontalAlignment="Left">
+
+                                    <TextBlock x:Name="BitrateLabel" Text="MP3 QUALITY" Style="{StaticResource SectionLabel}"/>
+                                    <UniformGrid x:Name="BitrateGroup" Columns="3" Margin="0,0,0,20">
+                                        <RadioButton x:Name="LoToggle" Style="{StaticResource SegToggle}" GroupName="Bitrate"
+                                                     Content="LO" Checked="Bitrate_Checked" Margin="0,0,6,0"/>
+                                        <RadioButton x:Name="MedToggle" Style="{StaticResource SegToggle}" GroupName="Bitrate"
+                                                     Content="MED" IsChecked="True" Checked="Bitrate_Checked" Margin="0,0,6,0"/>
+                                        <RadioButton x:Name="HiToggle" Style="{StaticResource SegToggle}" GroupName="Bitrate"
+                                                     Content="HI" Checked="Bitrate_Checked"/>
+                                    </UniformGrid>
+
+                                    <TextBlock Text="COUNTDOWN" Style="{StaticResource SectionLabel}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button x:Name="CountdownDownButton" Style="{StaticResource StepButton}" Click="CountdownDown_Click">
+                                            <Rectangle Width="11" Height="3" Fill="{StaticResource LilacBrush}" SnapsToDevicePixels="True"/>
+                                        </Button>
+                                        <TextBlock x:Name="CountdownValueText" Text="3"
+                                                   FontFamily="{StaticResource DisplayFont}"
+                                                   FontSize="17"
+                                                   Foreground="{StaticResource AmberBrush}"
+                                                   Width="72"
+                                                   TextAlignment="Center"
+                                                   VerticalAlignment="Center"/>
+                                        <Button x:Name="CountdownUpButton" Style="{StaticResource StepButton}" Click="CountdownUp_Click">
+                                            <Grid Width="11" Height="11">
+                                                <Rectangle Width="11" Height="3" Fill="{StaticResource LilacBrush}" VerticalAlignment="Center" SnapsToDevicePixels="True"/>
+                                                <Rectangle Width="3" Height="11" Fill="{StaticResource LilacBrush}" HorizontalAlignment="Center" SnapsToDevicePixels="True"/>
+                                            </Grid>
+                                        </Button>
+                                    </StackPanel>
+                                    <TextBlock Text="{DynamicResource L_CountdownHint}"
+                                               FontSize="12"
+                                               Foreground="{StaticResource MuteBrush}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,10,0,20"/>
+
+                                    <TextBlock Text="SHORTCUTS" Style="{StaticResource SectionLabel}"/>
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                            <Border Style="{StaticResource KeyCap}">
+                                                <TextBlock Text="SPACE" FontFamily="{StaticResource DisplayFont}" FontSize="12"
+                                                           Foreground="{StaticResource LilacBrush}" TextAlignment="Center"/>
+                                            </Border>
+                                            <TextBlock Text="{DynamicResource L_Key1}" FontSize="13" Foreground="{StaticResource MuteBrush}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                            <Border Style="{StaticResource KeyCap}">
+                                                <TextBlock Text="P" FontFamily="{StaticResource DisplayFont}" FontSize="12"
+                                                           Foreground="{StaticResource LilacBrush}" TextAlignment="Center"/>
+                                            </Border>
+                                            <TextBlock Text="{DynamicResource L_Key2}" FontSize="13" Foreground="{StaticResource MuteBrush}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                            <Border Style="{StaticResource KeyCap}">
+                                                <TextBlock Text="CTRL+O" FontFamily="{StaticResource DisplayFont}" FontSize="12"
+                                                           Foreground="{StaticResource LilacBrush}" TextAlignment="Center"/>
+                                            </Border>
+                                            <TextBlock Text="{DynamicResource L_Key3}" FontSize="13" Foreground="{StaticResource MuteBrush}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Style="{StaticResource KeyCap}">
+                                                <TextBlock Text="F1" FontFamily="{StaticResource DisplayFont}" FontSize="12"
+                                                           Foreground="{StaticResource LilacBrush}" TextAlignment="Center"/>
+                                            </Border>
+                                            <TextBlock Text="{DynamicResource L_Key4}" FontSize="13" Foreground="{StaticResource MuteBrush}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </DockPanel>
+
+                    </Grid>
+                </Border>
+
+                <!-- ===== 항상 보이는 설정 레일 ===== -->
+                <StackPanel Grid.Column="1" Margin="20,16">
+
+                    <TextBlock Text="SOURCE" Style="{StaticResource SectionLabel}"/>
+                    <ComboBox x:Name="DeviceCombo" Style="{StaticResource NightComboBox}" Margin="0,0,0,12"
+                              SelectionChanged="Device_SelectionChanged">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding FriendlyName}" TextTrimming="CharacterEllipsis"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <TextBlock Text="FORMAT" Style="{StaticResource SectionLabel}"/>
+                    <UniformGrid Columns="2" Margin="0,0,0,12">
+                        <RadioButton x:Name="WavToggle" Style="{StaticResource SegToggle}" GroupName="Format"
+                                     Content="WAV" IsChecked="True" Checked="Format_Checked" Margin="0,0,4,0"/>
+                        <RadioButton x:Name="Mp3Toggle" Style="{StaticResource SegToggle}" GroupName="Format"
+                                     Content="MP3" Checked="Format_Checked" Margin="4,0,0,0"/>
+                    </UniformGrid>
+
+                    <TextBlock Text="INPUT LEVEL" Style="{StaticResource SectionLabel}"/>
+                    <ItemsControl x:Name="LevelMeter" Height="20" Margin="0,0,0,12">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Rows="1"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{Binding Fill}" Margin="0,0,3,0" SnapsToDevicePixels="True"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Text="COUNTDOWN" Style="{StaticResource SectionLabel}"/>
+                    <UniformGrid Columns="4" Margin="0,0,0,12">
+                        <RadioButton x:Name="CountdownOff" Style="{StaticResource AmberSegToggle}" GroupName="Countdown"
+                                     Content="off" Tag="0" Checked="CountdownPreset_Checked" Margin="0,0,3,0"/>
+                        <RadioButton x:Name="Countdown3" Style="{StaticResource AmberSegToggle}" GroupName="Countdown"
+                                     Content="3s" Tag="3" Checked="CountdownPreset_Checked" Margin="3,0"/>
+                        <RadioButton x:Name="Countdown5" Style="{StaticResource AmberSegToggle}" GroupName="Countdown"
+                                     Content="5s" Tag="5" Checked="CountdownPreset_Checked" Margin="3,0"/>
+                        <RadioButton x:Name="Countdown10" Style="{StaticResource AmberSegToggle}" GroupName="Countdown"
+                                     Content="10s" Tag="10" Checked="CountdownPreset_Checked" Margin="3,0,0,0"/>
+                    </UniformGrid>
+
+                    <TextBlock Text="SAVE TO" Style="{StaticResource SectionLabel}"/>
+                    <Border Background="{StaticResource PanelBrush}"
+                            BorderBrush="{StaticResource LineBrush}"
+                            BorderThickness="2"
+                            Padding="11,9"
+                            SnapsToDevicePixels="True">
+                        <TextBlock x:Name="FolderText"
+                                   FontSize="12"
+                                   Foreground="{StaticResource LilacBrush}"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </Border>
+                    <Button x:Name="ChangeFolderButton"
+                            Style="{StaticResource GhostButton}"
+                            Content="CHANGE"
+                            Click="ChangeFolder_Click"
+                            HorizontalAlignment="Stretch"
+                            Margin="0,8,0,0"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- ============================================================
+                 도움말 — 시안 4a. 탭을 고르면 창 전체가 튜토리얼로 바뀐다.
+                 왼쪽은 달 아래 선 코코아와 말풍선, 오른쪽은 단계 · 치트시트 · 이동 버튼.
+                 ============================================================ -->
+            <Grid x:Name="HelpScreen" Grid.Row="1" Grid.RowSpan="2"
+                  Background="{StaticResource NightBrush}"
+                  Visibility="Collapsed">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="604"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0"
+                        Background="{StaticResource HeroBrush}"
+                        BorderBrush="{StaticResource LineBrush}"
+                        BorderThickness="0,0,2,0"
+                        ClipToBounds="True">
+                    <Grid>
+                        <Canvas x:Name="HelpStarCanvas" IsHitTestVisible="False"/>
+
+                        <Canvas Width="186" Height="186"
+                                HorizontalAlignment="Right" VerticalAlignment="Top"
+                                Margin="0,24,30,0"
+                                IsHitTestVisible="False">
+                            <Ellipse x:Name="HelpMoonGlow" Canvas.Left="-72" Canvas.Top="-72" Width="330" Height="330" Opacity="0.55"
+                                 RenderTransformOrigin="0.5,0.5">
+                            <Ellipse.RenderTransform>
+                                <ScaleTransform x:Name="HelpMoonGlowScale"/>
+                            </Ellipse.RenderTransform>
+                                <Ellipse.Fill>
+                                    <RadialGradientBrush RadiusX="0.707" RadiusY="0.707">
+                                        <GradientStop Offset="0"    Color="#4DFFE9A8"/>
+                                        <GradientStop Offset="0.42" Color="#1FFFD86B"/>
+                                        <GradientStop Offset="0.68" Color="#00FFD86B"/>
+                                        <GradientStop Offset="1"    Color="#00FFD86B"/>
+                                    </RadialGradientBrush>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <Ellipse Canvas.Left="-16" Canvas.Top="-16" Width="218" Height="218">
+                                <Ellipse.Fill>
+                                    <RadialGradientBrush RadiusX="0.707" RadiusY="0.707">
+                                        <GradientStop Offset="0"   Color="#38FFF8DC"/>
+                                        <GradientStop Offset="0.6" Color="#00FFF8DC"/>
+                                        <GradientStop Offset="1"   Color="#00FFF8DC"/>
+                                    </RadialGradientBrush>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <Canvas x:Name="HelpMoonCanvas" Canvas.Left="0" Canvas.Top="0"/>
+                            <Canvas x:Name="HelpMoonSparks" Canvas.Left="0" Canvas.Top="0"/>
+                        </Canvas>
+
+                        <!-- 코코아 — 히어로보다 큰 8px 격자로 선다 -->
+                        <Canvas x:Name="HelpCatCanvas" Width="176" Height="192"
+                                HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                                Margin="44,0,0,34"
+                                IsHitTestVisible="False">
+                            <Canvas.RenderTransform>
+                                <TranslateTransform x:Name="HelpCatBob"/>
+                            </Canvas.RenderTransform>
+                        </Canvas>
+
+                        <!-- 코코아가 서 있는 바닥 -->
+                        <Grid VerticalAlignment="Bottom" Margin="240,0,44,44" Height="24" IsHitTestVisible="False">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Rectangle Grid.Column="0" Width="26" Height="8"  Fill="{StaticResource LineBrush}"     VerticalAlignment="Bottom" Margin="0,0,5,0"/>
+                            <Rectangle Grid.Column="1" Width="40" Height="14" Fill="{StaticResource PanelSelBrush}" VerticalAlignment="Bottom" Margin="0,0,5,0"/>
+                            <Rectangle Grid.Column="2" Width="22" Height="6"  Fill="{StaticResource LineBrush}"     VerticalAlignment="Bottom" Margin="0,0,5,0"/>
+                            <Rectangle Grid.Column="3"            Height="10" Fill="{StaticResource PanelSelBrush}" VerticalAlignment="Bottom"/>
+                        </Grid>
+
+                        <!-- 코코아의 말풍선 -->
+                        <StackPanel VerticalAlignment="Bottom" Margin="36,0,36,236">
+                            <Border Background="{StaticResource CreamBrush}" Padding="24,22">
+                                <StackPanel>
+                                    <TextBlock x:Name="HelpSaysLabel"
+                                               FontFamily="{StaticResource DisplayFont}"
+                                               FontSize="12"
+                                               Foreground="{StaticResource CardLabelBrush}"/>
+                                    <TextBlock x:Name="HelpStepTitle"
+                                               FontFamily="{StaticResource DisplayFont}"
+                                               FontSize="22" LineHeight="32" LineStackingStrategy="BlockLineHeight"
+                                               Foreground="{StaticResource NightBrush}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,10,0,0"/>
+                                    <TextBlock x:Name="HelpStepBody"
+                                               FontSize="15" LineHeight="25" LineStackingStrategy="BlockLineHeight"
+                                               Foreground="{StaticResource LineSoftBrush}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,12,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Path Data="M 0,0 L 28,0 L 14,18 Z"
+                                  Fill="{StaticResource CreamBrush}"
+                                  HorizontalAlignment="Left"
+                                  Margin="46,0,0,0"/>
                         </StackPanel>
                     </Grid>
                 </Border>
 
-                <!-- ============== Main body (cream + dot pattern) ============== -->
-                <Grid Grid.Row="1" Background="{StaticResource CreamBrush}">
-                    <Grid Margin="22">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="20"/>
-                            <ColumnDefinition Width="378"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="18"/>
-                            <RowDefinition Height="*" MinHeight="180"/>
-                        </Grid.RowDefinitions>
+                <DockPanel Grid.Column="1" Margin="28,26">
+                    <StackPanel DockPanel.Dock="Top">
+                        <TextBlock Text="{DynamicResource L_HelpTitle}"
+                                   FontFamily="{StaticResource DisplayFont}"
+                                   FontSize="16"
+                                   Foreground="{StaticResource CreamBrush}"/>
+                        <TextBlock Text="{DynamicResource L_HelpSub}"
+                                   FontSize="13"
+                                   Foreground="{StaticResource Mute2Brush}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,8,0,0"/>
+                    </StackPanel>
 
-                        <!-- ====================================================
-                             MAIN STAGE — timer + waveform + transport
-                             ==================================================== -->
-                        <ContentControl Grid.Row="0" Grid.Column="0" Style="{StaticResource PixelPanel}">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-
-                                <!-- status strip -->
-                                <Border Grid.Row="0"
-                                        Background="{StaticResource AccentSoftBrush}"
-                                        BorderBrush="{StaticResource InkDarkBrush}"
-                                        BorderThickness="0,0,0,2"
-                                        Padding="18,12">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Border Grid.Column="0"
-                                                x:Name="StatusDot"
-                                                Width="16" Height="16"
-                                                Background="{StaticResource InkSoftBrush}"
-                                                BorderBrush="{StaticResource InkDarkBrush}"
-                                                BorderThickness="2"
-                                                VerticalAlignment="Center"
-                                                Margin="0,0,12,0"
-                                                RenderTransformOrigin="0.5,0.5">
-                                            <Border.RenderTransform>
-                                                <ScaleTransform x:Name="StatusDotScale" ScaleX="1" ScaleY="1"/>
-                                            </Border.RenderTransform>
-                                        </Border>
-                                        <TextBlock Grid.Column="1"
-                                                   x:Name="StatusLabel"
-                                                   Text="{DynamicResource L_StatusIdle}"
-                                                   FontFamily="{StaticResource DisplayFont}"
-                                                   FontSize="16"
-                                                   FontWeight="Bold"
-                                                   Foreground="{StaticResource InkDarkBrush}"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="3"
-                                                   x:Name="FormatInfoText"
-                                                   Text=""
-                                                   FontSize="12"
-                                                   Foreground="{StaticResource InkSoftBrush}"
-                                                   VerticalAlignment="Center"/>
-                                    </Grid>
-                                </Border>
-
-                                <!-- Big timer -->
-                                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,18,0,0">
-                                    <TextBlock x:Name="TimerMin" Text="00"
-                                               FontFamily="{StaticResource PixelMonoFont}"
-                                               FontWeight="Bold" FontSize="84"
-                                               Foreground="{StaticResource InkDarkBrush}"
-                                               LineHeight="84"
-                                               TextOptions.TextFormattingMode="Ideal"/>
-                                    <TextBlock x:Name="TimerColon" Text=":"
-                                               FontFamily="{StaticResource PixelMonoFont}"
-                                               FontWeight="Bold" FontSize="64"
-                                               Foreground="{StaticResource AccentDeepBrush}"
-                                               Margin="2,8,2,0"/>
-                                    <TextBlock x:Name="TimerSec" Text="00"
-                                               FontFamily="{StaticResource PixelMonoFont}"
-                                               FontWeight="Bold" FontSize="84"
-                                               Foreground="{StaticResource InkDarkBrush}"
-                                               LineHeight="84"
-                                               TextOptions.TextFormattingMode="Ideal"/>
-                                    <TextBlock x:Name="TimerCs" Text=".00"
-                                               FontFamily="{StaticResource PixelMonoFont}"
-                                               FontWeight="Bold" FontSize="32"
-                                               Foreground="{StaticResource InkSoftBrush}"
-                                               VerticalAlignment="Bottom"
-                                               Margin="6,0,0,8"/>
+                    <StackPanel DockPanel.Dock="Bottom">
+                        <Grid Margin="0,16,0,16">
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Left" VerticalAlignment="Center">
+                                <Rectangle x:Name="HelpDot1" Width="8" Height="8" Fill="{StaticResource LineSoftBrush}" Margin="0,0,9,0"/>
+                                <Rectangle x:Name="HelpDot2" Width="8" Height="8" Fill="{StaticResource LineSoftBrush}" Margin="0,0,9,0"/>
+                                <Rectangle x:Name="HelpDot3" Width="8" Height="8" Fill="{StaticResource LineSoftBrush}" Margin="0,0,9,0"/>
+                                <Rectangle x:Name="HelpDot4" Width="8" Height="8" Fill="{StaticResource LineSoftBrush}"/>
+                            </StackPanel>
+                            <TextBlock x:Name="HelpCounter"
+                                       FontFamily="{StaticResource DisplayFont}"
+                                       FontSize="12"
+                                       Foreground="{StaticResource MuteBrush}"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="HelpBackButton" Grid.Column="0"
+                                    Style="{StaticResource TransportSecondary}"
+                                    Width="120" Height="54" FontSize="15"
+                                    Content="{DynamicResource L_HelpBack}"
+                                    Click="HelpBack_Click"/>
+                            <Button x:Name="HelpNextButton" Grid.Column="1"
+                                    Style="{StaticResource TransportPrimary}"
+                                    Width="Auto" Height="54" FontSize="16"
+                                    HorizontalAlignment="Stretch"
+                                    Margin="12,0,0,0"
+                                    Background="{StaticResource AmberBrush}"
+                                    Click="HelpNext_Click">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock x:Name="HelpNextText" VerticalAlignment="Center"/>
+                                    <Path x:Name="HelpNextArrow"
+                                          Data="M 0,0 L 11,7 L 0,14 Z"
+                                          Fill="{StaticResource NightBrush}"
+                                          VerticalAlignment="Center"
+                                          Margin="10,0,0,0"/>
                                 </StackPanel>
+                            </Button>
+                        </Grid>
+                        <TextBlock Text="{DynamicResource L_HelpFoot}"
+                                   FontFamily="{StaticResource DisplayFont}"
+                                   FontSize="11"
+                                   Foreground="{StaticResource MuteBrush}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,16,0,0"/>
+                    </StackPanel>
 
-                                <!-- Waveform host -->
-                                <Grid Grid.Row="2" Margin="18,8,18,4" VerticalAlignment="Center">
-                                    <ItemsControl x:Name="WaveformHost"
-                                                  Height="120"
-                                                  HorizontalAlignment="Stretch"
-                                                  VerticalAlignment="Center">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <UniformGrid Rows="1" />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Grid HorizontalAlignment="Center" VerticalAlignment="Bottom">
-                                                    <Rectangle Width="8"
-                                                               Height="{Binding Height}"
-                                                               Fill="{Binding Fill}"
-                                                               VerticalAlignment="Bottom"
-                                                               SnapsToDevicePixels="True"/>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </Grid>
-
-                                <!-- Transport buttons -->
-                                <StackPanel Grid.Row="3" HorizontalAlignment="Center" Margin="0,8,0,14">
-                                <StackPanel x:Name="TransportButtons" Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <Button x:Name="RecordButton"
-                                            Style="{StaticResource PixelButton}"
-                                            Background="{StaticResource AccentBrush}"
-                                            BorderBrush="{StaticResource AccentDeepBrush}"
-                                            MinWidth="220" Height="64"
-                                            Click="RecordButton_Click"
-                                            Margin="0,0,12,0">
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Ellipse x:Name="RecordButtonDot"
-                                                     Width="20" Height="20"
-                                                     Fill="{StaticResource AccentDeepBrush}"
-                                                     Stroke="{StaticResource InkDarkBrush}"
-                                                     StrokeThickness="2"
-                                                     Margin="0,0,12,0"/>
-                                            <TextBlock x:Name="RecordButtonText"
-                                                       Text="{DynamicResource L_RecordStart}"
-                                                       FontSize="20"
-                                                       FontWeight="Bold"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button x:Name="PauseButton"
-                                            Style="{StaticResource PixelButton}"
-                                            Background="{StaticResource LilacBrush}"
-                                            BorderBrush="{StaticResource LilacDeepBrush}"
-                                            MinWidth="140" Height="64"
-                                            IsEnabled="False"
-                                            Visibility="Collapsed"
-                                            Click="PauseButton_Click"
-                                            Margin="0,0,12,0">
-                                        <Grid>
-                                            <StackPanel x:Name="PauseIconGroup" Orientation="Horizontal" VerticalAlignment="Center">
-                                                <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
-                                                    <Border Width="5" Height="20" Background="{StaticResource InkDarkBrush}" Margin="0,0,4,0" SnapsToDevicePixels="True"/>
-                                                    <Border Width="5" Height="20" Background="{StaticResource InkDarkBrush}" SnapsToDevicePixels="True"/>
-                                                </StackPanel>
-                                                <TextBlock Text="{DynamicResource L_PauseBtn}" FontSize="18" FontWeight="Bold"/>
-                                            </StackPanel>
-                                            <StackPanel x:Name="ResumeIconGroup" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
-                                                <Path Data="M 0 0 L 12 8 L 0 16 Z"
-                                                      Fill="{StaticResource InkDarkBrush}"
-                                                      Width="12" Height="16"
-                                                      Stretch="Uniform"
-                                                      Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource L_ResumeBtn}" FontSize="18" FontWeight="Bold"/>
-                                            </StackPanel>
-                                        </Grid>
-                                    </Button>
-                                    <Button x:Name="StopButton"
-                                            Style="{StaticResource PixelButton}"
-                                            Background="{StaticResource PaperBrush}"
-                                            BorderBrush="{StaticResource CreamDeepBrush}"
-                                            MinWidth="150" Height="64"
-                                            IsEnabled="False"
-                                            Click="StopButton_Click">
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Border Width="18" Height="18"
-                                                    Background="{StaticResource InkSoftBrush}"
-                                                    BorderBrush="{StaticResource InkDarkBrush}"
-                                                    BorderThickness="2"
-                                                    Margin="0,0,12,0"/>
-                                            <TextBlock Text="{DynamicResource L_StopBtn}" FontSize="20" FontWeight="Bold"/>
-                                        </StackPanel>
-                                    </Button>
-                                </StackPanel>
-                                <!-- 카운트다운 선택은 녹음 버튼 왼쪽 모서리에, 힌트는 오른쪽 끝에 붙는다.
-                                     라벨 길이가 달라지는 두 언어에서 같은 자리를 유지하기 위한 배치다. -->
-                                <Grid Margin="0,12,0,0"
-                                      Width="{Binding ActualWidth, ElementName=TransportButtons}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,22,0,0">
+                        <StackPanel>
+                            <Button x:Name="HelpRow1" Style="{StaticResource HelpStepButton}" Click="HelpRow_Click" Tag="0" Margin="0,0,0,12">
+                                <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*" MinWidth="12"/>
-                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"
-                                                Orientation="Horizontal"
-                                                VerticalAlignment="Center"
-                                                ToolTip="{DynamicResource L_CountdownHint}"
-                                                ToolTipService.ShowOnDisabled="True">
-                                        <Button x:Name="CountdownDownButton"
-                                                Style="{StaticResource CountdownStepButton}"
-                                                Click="CountdownDown_Click">
-                                            <Border Width="12" Height="3"
-                                                    Background="{StaticResource InkDarkBrush}"
-                                                    SnapsToDevicePixels="True"/>
-                                        </Button>
-                                        <Border x:Name="CountdownValueBox"
-                                                MinWidth="66" Height="30"
-                                                BorderBrush="{StaticResource InkDarkBrush}"
-                                                BorderThickness="2"
-                                                Margin="4,0"
-                                                SnapsToDevicePixels="True">
-                                            <Grid>
-                                                <Rectangle Fill="#80FFFFFF" Height="2" VerticalAlignment="Top"/>
-                                                <Rectangle x:Name="CountdownValueStripe" Height="3" VerticalAlignment="Bottom"/>
-                                                <TextBlock x:Name="CountdownValueText"
-                                                           FontFamily="{StaticResource DisplayFont}"
-                                                           FontSize="13"
-                                                           FontWeight="Bold"
-                                                           HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center"/>
-                                            </Grid>
-                                        </Border>
-                                        <Button x:Name="CountdownUpButton"
-                                                Style="{StaticResource CountdownStepButton}"
-                                                Click="CountdownUp_Click">
-                                            <Grid Width="12" Height="12">
-                                                <Border Width="12" Height="3"
-                                                        Background="{StaticResource InkDarkBrush}"
-                                                        VerticalAlignment="Center"
-                                                        SnapsToDevicePixels="True"/>
-                                                <Border Width="3" Height="12"
-                                                        Background="{StaticResource InkDarkBrush}"
-                                                        HorizontalAlignment="Center"
-                                                        SnapsToDevicePixels="True"/>
-                                            </Grid>
-                                        </Button>
-                                    </StackPanel>
-                                    <TextBlock Grid.Column="2"
-                                               Text="{DynamicResource L_ShortcutHint}"
-                                               VerticalAlignment="Center"
-                                               FontSize="12"
-                                               TextTrimming="CharacterEllipsis"
-                                               Foreground="{StaticResource InkSoftBrush}"/>
-                                </Grid>
-                                </StackPanel>
-                            </Grid>
-                        </ContentControl>
-
-                        <!-- ====================================================
-                             RIGHT COLUMN — settings + mascot
-                             ==================================================== -->
-                        <Grid Grid.Row="0" Grid.Column="2">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="14"/>
-                                <RowDefinition Height="200"/>
-                            </Grid.RowDefinitions>
-
-                            <!-- Settings panel -->
-                            <ContentControl Grid.Row="0" Style="{StaticResource PixelPanel}">
-                                <StackPanel Margin="16">
-                                    <TextBlock Text="{DynamicResource L_SettingsTitle}"
-                                               FontFamily="{StaticResource DisplayFont}"
-                                               FontSize="16"
-                                               FontWeight="Bold"
-                                               Foreground="{StaticResource InkDarkBrush}"
-                                               Margin="0,0,0,12"/>
-
-                                    <TextBlock Text="{DynamicResource L_InputDevice}"
-                                               FontSize="13"
-                                               Foreground="{StaticResource InkSoftBrush}"
-                                               Margin="0,0,0,6"/>
-                                    <ComboBox x:Name="DeviceCombo"
-                                              Style="{StaticResource PixelComboBox}"
-                                              DisplayMemberPath="FriendlyName"
-                                              Margin="0,0,0,12"/>
-
-                                    <TextBlock Text="{DynamicResource L_OutputFormat}"
-                                               FontSize="13"
-                                               Foreground="{StaticResource InkSoftBrush}"
-                                               Margin="0,0,0,6"/>
-                                    <Grid Margin="0,0,0,8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <RadioButton Grid.Column="0"
-                                                     x:Name="WavToggle"
-                                                     Style="{StaticResource FormatToggle}"
-                                                     IsChecked="True"
-                                                     GroupName="Format"
-                                                     Checked="Format_Checked">
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <!-- mini LP disc -->
-                                                <Grid Width="14" Height="14" Margin="0,0,6,0">
-                                                    <Ellipse Width="14" Height="14" Fill="{StaticResource InkDarkBrush}"/>
-                                                    <Ellipse Width="4" Height="4" Fill="{StaticResource PaperBrush}"/>
-                                                </Grid>
-                                                <TextBlock Text="WAV"/>
-                                            </StackPanel>
-                                        </RadioButton>
-                                        <RadioButton Grid.Column="1"
-                                                     x:Name="Mp3Toggle"
-                                                     Style="{StaticResource FormatToggle}"
-                                                     GroupName="Format"
-                                                     Checked="Format_Checked"
-                                                     Margin="-2,0,0,0">
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <!-- mini cassette -->
-                                                <Border Width="18" Height="12"
-                                                        Background="{StaticResource InkDarkBrush}"
-                                                        BorderBrush="{StaticResource InkDarkBrush}"
-                                                        BorderThickness="2"
-                                                        Margin="0,0,6,0"
-                                                        SnapsToDevicePixels="True">
-                                                    <Border Background="{StaticResource PaperBrush}"
-                                                            Width="12" Height="3"
-                                                            VerticalAlignment="Center"
-                                                            SnapsToDevicePixels="True"/>
-                                                </Border>
-                                                <TextBlock Text="MP3"/>
-                                            </StackPanel>
-                                        </RadioButton>
-                                    </Grid>
-                                    <TextBlock x:Name="BitrateLabel"
-                                               Text="{DynamicResource L_Mp3Quality}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource InkSoftBrush}"
-                                               Margin="0,0,0,4"
-                                               Visibility="Collapsed"/>
-                                    <Grid x:Name="BitrateGroup"
-                                          Margin="0,0,0,12"
-                                          Visibility="Collapsed">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <RadioButton Grid.Column="0"
-                                                     x:Name="LoToggle"
-                                                     Style="{StaticResource FormatToggle}"
-                                                     Content="LO"
-                                                     GroupName="Bitrate"
-                                                     Checked="Bitrate_Checked"/>
-                                        <RadioButton Grid.Column="1"
-                                                     x:Name="MedToggle"
-                                                     Style="{StaticResource FormatToggle}"
-                                                     Content="MED"
-                                                     IsChecked="True"
-                                                     GroupName="Bitrate"
-                                                     Checked="Bitrate_Checked"
-                                                     Margin="-2,0,0,0"/>
-                                        <RadioButton Grid.Column="2"
-                                                     x:Name="HiToggle"
-                                                     Style="{StaticResource FormatToggle}"
-                                                     Content="HI"
-                                                     GroupName="Bitrate"
-                                                     Checked="Bitrate_Checked"
-                                                     Margin="-2,0,0,0"/>
-                                    </Grid>
-
-                                    <TextBlock Text="{DynamicResource L_InputLevel}"
-                                               FontSize="13"
-                                               Foreground="{StaticResource InkSoftBrush}"
-                                               Margin="0,0,0,6"/>
-                                    <Border Background="{StaticResource CreamBrush}"
-                                            BorderBrush="{StaticResource InkDarkBrush}"
-                                            BorderThickness="2"
-                                            Padding="3"
-                                            SnapsToDevicePixels="True">
-                                        <ItemsControl x:Name="LevelMeter" Height="14">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <UniformGrid Rows="1"/>
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Rectangle Fill="{Binding Fill}" Margin="1,0" SnapsToDevicePixels="True"/>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </Border>
-
-                                    <TextBlock Text="{DynamicResource L_SaveFolder}"
-                                               FontSize="13"
-                                               Foreground="{StaticResource InkSoftBrush}"
-                                               Margin="0,12,0,6"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Border Grid.Column="0"
-                                                Background="{StaticResource PaperBrush}"
-                                                BorderBrush="{StaticResource InkDarkBrush}"
-                                                BorderThickness="2"
-                                                Padding="10,6"
-                                                Margin="0,0,6,0"
-                                                SnapsToDevicePixels="True">
-                                            <TextBlock x:Name="FolderText"
-                                                       Text="..."
-                                                       FontSize="13"
-                                                       Foreground="{StaticResource InkDarkBrush}"
-                                                       TextTrimming="CharacterEllipsis"
-                                                       VerticalAlignment="Center"/>
-                                        </Border>
-                                        <Button Grid.Column="1"
-                                                Style="{StaticResource PixelButton}"
-                                                Background="{StaticResource MintBrush}"
-                                                BorderBrush="{StaticResource MintDeepBrush}"
-                                                Height="34"
-                                                Padding="14,0"
-                                                FontSize="13"
-                                                Content="{DynamicResource L_ChangeBtn}"
-                                                Click="ChangeFolder_Click"/>
-                                    </Grid>
-                                </StackPanel>
-                            </ContentControl>
-
-                            <!-- Mascot card -->
-                            <ContentControl Grid.Row="2" Style="{StaticResource PixelPanel}"
-                                            Background="{StaticResource AccentSoftBrush}">
-                                <Grid Margin="14">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="*"/>
-                                    </Grid.RowDefinitions>
-                                    <Grid Grid.Row="0">
-                                        <TextBlock Text="{DynamicResource L_MascotName}"
-                                                   FontFamily="{StaticResource DisplayFont}"
-                                                   FontSize="14"
-                                                   FontWeight="Bold"
-                                                   Foreground="{StaticResource InkDarkBrush}"
-                                                   HorizontalAlignment="Left"/>
-                                        <TextBlock Text="♥  ★"
-                                                   FontSize="14"
-                                                   Foreground="{StaticResource AccentDeepBrush}"
-                                                   HorizontalAlignment="Right"/>
-                                    </Grid>
-                                    <Grid Grid.Row="1" Margin="0,8,0,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <!-- Mascot canvas (filled at runtime) -->
-                                        <Canvas Grid.Column="0"
-                                                x:Name="MascotCanvas"
-                                                Width="96" Height="112"
-                                                Margin="0,0,12,0"
-                                                SnapsToDevicePixels="True"
-                                                UseLayoutRounding="True"
-                                                RenderTransformOrigin="0.5,1">
-                                            <Canvas.RenderTransform>
-                                                <TranslateTransform x:Name="MascotBob" Y="0"/>
-                                            </Canvas.RenderTransform>
+                                    <Border Grid.Column="0" Width="38" Height="38"
+                                            Background="{StaticResource MintBrush}" Margin="0,0,14,0">
+                                        <Canvas Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Rectangle Canvas.Left="0"  Canvas.Top="6" Width="6" Height="8"  Fill="{StaticResource NightBrush}"/>
+                                            <Rectangle Canvas.Left="6"  Canvas.Top="2" Width="5" Height="16" Fill="{StaticResource NightBrush}"/>
+                                            <Rectangle Canvas.Left="14" Canvas.Top="5" Width="2" Height="10" Fill="{StaticResource NightBrush}"/>
+                                            <Rectangle Canvas.Left="18" Canvas.Top="2" Width="2" Height="16" Fill="{StaticResource NightBrush}"/>
                                         </Canvas>
-                                        <!-- speech bubble (tail + bubble) -->
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Polygon Points="0,8 8,0 8,16"
-                                                     Fill="{StaticResource PaperBrush}"
-                                                     Stroke="{StaticResource InkDarkBrush}"
-                                                     StrokeThickness="2"
-                                                     VerticalAlignment="Center"
-                                                     Margin="0,0,-2,0"
-                                                     SnapsToDevicePixels="True"/>
-                                            <Border Background="{StaticResource PaperBrush}"
-                                                    BorderBrush="{StaticResource InkDarkBrush}"
-                                                    BorderThickness="2"
-                                                    Padding="10,8"
-                                                    VerticalAlignment="Center"
-                                                    SnapsToDevicePixels="True">
-                                                <TextBlock x:Name="MascotSpeech"
-                                                           Text="{DynamicResource L_Hello}"
-                                                           FontSize="13"
-                                                           Foreground="{StaticResource InkDarkBrush}"
-                                                           TextWrapping="Wrap"
-                                                           LineHeight="18"/>
-                                            </Border>
-                                        </StackPanel>
-                                    </Grid>
-                                </Grid>
-                            </ContentControl>
-                        </Grid>
-
-                        <!-- ====================================================
-                             BOTTOM — recordings library
-                             ==================================================== -->
-                        <ContentControl Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"
-                                        Style="{StaticResource PixelPanel}">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
-                                </Grid.RowDefinitions>
-                                <!-- header -->
-                                <Border Grid.Row="0"
-                                        Background="{StaticResource CreamBrush}"
-                                        BorderBrush="{StaticResource InkDarkBrush}"
-                                        BorderThickness="0,0,0,2"
-                                        Padding="16,10">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0"
-                                                   Text="📁"
-                                                   FontSize="18"
-                                                   VerticalAlignment="Center"
-                                                   Margin="0,0,8,0"/>
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{DynamicResource L_LibraryTitle}"
-                                                   FontFamily="{StaticResource DisplayFont}"
-                                                   FontSize="16"
-                                                   FontWeight="Bold"
-                                                   Foreground="{StaticResource InkDarkBrush}"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="2"
-                                                   x:Name="RecordingCountText"
-                                                   Text=""
-                                                   FontSize="13"
-                                                   Foreground="{StaticResource InkSoftBrush}"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="4"
-                                                   x:Name="LibraryFolderHint"
-                                                   Text=""
-                                                   FontSize="12"
-                                                   Foreground="{StaticResource InkSoftBrush}"
-                                                   VerticalAlignment="Center"
-                                                   TextTrimming="CharacterEllipsis"/>
-                                    </Grid>
-                                </Border>
-
-                                <!-- list -->
-                                <ScrollViewer Grid.Row="1"
-                                              VerticalScrollBarVisibility="Auto"
-                                              HorizontalScrollBarVisibility="Disabled"
-                                              Padding="12">
-                                    <ItemsControl x:Name="RecordingsList">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <UniformGrid Columns="2"/>
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Border Background="{StaticResource PaperBrush}"
-                                                        BorderBrush="{StaticResource InkDarkBrush}"
-                                                        BorderThickness="2"
-                                                        Padding="10"
-                                                        Margin="6"
-                                                        SnapsToDevicePixels="True"
-                                                        MouseLeftButtonDown="Card_MouseLeftButtonDown"
-                                                        MouseLeftButtonUp="Card_MouseLeftButtonUp"
-                                                        MouseMove="Card_MouseMove"
-                                                        ToolTip="{DynamicResource L_CardTooltip}">
-                                                    <Grid>
-                                                        <Grid.RowDefinitions>
-                                                            <RowDefinition Height="Auto"/>
-                                                            <RowDefinition Height="Auto"/>
-                                                        </Grid.RowDefinitions>
-                                                        <Grid Grid.Row="0">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                            <ColumnDefinition Width="*"/>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                        </Grid.ColumnDefinitions>
-                                                        <!-- pixel cassette icon -->
-                                                        <Border Grid.Column="0"
-                                                                Width="48" Height="32"
-                                                                Background="{Binding TapeColor}"
-                                                                BorderBrush="{StaticResource InkDarkBrush}"
-                                                                BorderThickness="2"
-                                                                Margin="0,0,12,0"
-                                                                SnapsToDevicePixels="True">
-                                                            <Grid>
-                                                                <Border Background="{StaticResource PaperBrush}"
-                                                                        Width="36" Height="14"
-                                                                        VerticalAlignment="Center"
-                                                                        SnapsToDevicePixels="True"/>
-                                                                <StackPanel Orientation="Horizontal"
-                                                                            HorizontalAlignment="Center"
-                                                                            VerticalAlignment="Center">
-                                                                    <Ellipse Width="6" Height="6"
-                                                                             Fill="{StaticResource InkDarkBrush}"
-                                                                             Margin="0,0,8,0"/>
-                                                                    <Ellipse Width="6" Height="6"
-                                                                             Fill="{StaticResource InkDarkBrush}"/>
-                                                                </StackPanel>
-                                                            </Grid>
-                                                        </Border>
-                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                            <Grid MouseLeftButtonDown="RecordingName_DoubleClick">
-                                                                <TextBlock x:Name="NameLabel"
-                                                                           Text="{Binding Name}"
-                                                                           FontSize="14"
-                                                                           FontWeight="Bold"
-                                                                           Foreground="{StaticResource InkDarkBrush}"
-                                                                           TextTrimming="CharacterEllipsis">
-                                                                    <TextBlock.Style>
-                                                                        <Style TargetType="TextBlock">
-                                                                            <Style.Triggers>
-                                                                                <DataTrigger Binding="{Binding IsRenaming}" Value="True">
-                                                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                                                </DataTrigger>
-                                                                            </Style.Triggers>
-                                                                        </Style>
-                                                                    </TextBlock.Style>
-                                                                </TextBlock>
-                                                                <TextBox x:Name="NameEdit"
-                                                                         Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                                                                         FontSize="14"
-                                                                         FontWeight="Bold"
-                                                                         Foreground="{StaticResource InkDarkBrush}"
-                                                                         Background="{StaticResource PaperBrush}"
-                                                                         BorderBrush="{StaticResource InkDarkBrush}"
-                                                                         BorderThickness="2"
-                                                                         Padding="4,2"
-                                                                         Visibility="Collapsed"
-                                                                         KeyDown="RenameBox_KeyDown"
-                                                                         LostKeyboardFocus="RenameBox_LostFocus"
-                                                                         Loaded="RenameBox_Loaded"
-                                                                         IsVisibleChanged="RenameBox_VisibleChanged">
-                                                                    <TextBox.Style>
-                                                                        <Style TargetType="TextBox">
-                                                                            <Style.Triggers>
-                                                                                <DataTrigger Binding="{Binding IsRenaming}" Value="True">
-                                                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                                                </DataTrigger>
-                                                                            </Style.Triggers>
-                                                                        </Style>
-                                                                    </TextBox.Style>
-                                                                </TextBox>
-                                                            </Grid>
-                                                            <TextBlock Text="{Binding Meta}"
-                                                                       FontSize="12"
-                                                                       Foreground="{StaticResource InkSoftBrush}"
-                                                                       Margin="0,2,0,0"/>
-                                                        </StackPanel>
-                                                        <Button x:Name="PlayBtn"
-                                                                Grid.Column="2"
-                                                                Style="{StaticResource PixelIconButton}"
-                                                                Background="{StaticResource AccentBrush}"
-                                                                BorderBrush="{StaticResource AccentDeepBrush}"
-                                                                Tag="{Binding Path}"
-                                                                Click="PlayRecording_Click"
-                                                                Margin="6,0">
-                                                            <Grid>
-                                                                <Path x:Name="PlayGlyph"
-                                                                      Data="M 0 0 L 8 6 L 0 12 Z"
-                                                                      Fill="{StaticResource InkDarkBrush}"
-                                                                      Width="8" Height="12"
-                                                                      Stretch="Uniform"/>
-                                                                <StackPanel x:Name="PauseGlyph" Orientation="Horizontal" Visibility="Collapsed">
-                                                                    <Border Width="3" Height="12" Background="{StaticResource InkDarkBrush}" Margin="0,0,2,0" SnapsToDevicePixels="True"/>
-                                                                    <Border Width="3" Height="12" Background="{StaticResource InkDarkBrush}" SnapsToDevicePixels="True"/>
-                                                                </StackPanel>
-                                                            </Grid>
-                                                        </Button>
-                                                        <Button Grid.Column="3"
-                                                                Style="{StaticResource PixelIconButton}"
-                                                                Tag="{Binding Path}"
-                                                                Click="DeleteRecording_Click">
-                                                            <TextBlock Text="✕"
-                                                                       FontSize="14"
-                                                                       FontWeight="Bold"
-                                                                       Foreground="{StaticResource InkSoftBrush}"/>
-                                                        </Button>
-                                                        </Grid>
-                                                        <!-- Progress bar (visible only while this item is playing) -->
-                                                        <Border Grid.Row="1"
-                                                                Height="8"
-                                                                Margin="0,8,0,0"
-                                                                Background="{StaticResource CreamBrush}"
-                                                                BorderBrush="{StaticResource InkDarkBrush}"
-                                                                BorderThickness="2"
-                                                                ClipToBounds="True"
-                                                                Visibility="{Binding IsPlaying, Converter={StaticResource BoolToVis}}"
-                                                                SnapsToDevicePixels="True">
-                                                            <Border Background="{StaticResource MintDeepBrush}"
-                                                                    HorizontalAlignment="Stretch"
-                                                                    RenderTransformOrigin="0,0"
-                                                                    SnapsToDevicePixels="True">
-                                                                <Border.RenderTransform>
-                                                                    <ScaleTransform ScaleX="{Binding Progress}"/>
-                                                                </Border.RenderTransform>
-                                                            </Border>
-                                                        </Border>
-                                                    </Grid>
-                                                </Border>
-                                                <DataTemplate.Triggers>
-                                                    <DataTrigger Binding="{Binding IsPlaying}" Value="True">
-                                                        <Setter TargetName="PlayGlyph" Property="Visibility" Value="Collapsed"/>
-                                                        <Setter TargetName="PauseGlyph" Property="Visibility" Value="Visible"/>
-                                                    </DataTrigger>
-                                                </DataTemplate.Triggers>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </ScrollViewer>
-
-                                <!-- Empty state -->
-                                <StackPanel Grid.Row="1"
-                                            x:Name="EmptyStateText"
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            Visibility="Visible">
-                                    <!-- pixel empty cassette -->
-                                    <Border Width="96" Height="64"
-                                            Background="{StaticResource CreamDeepBrush}"
-                                            BorderBrush="{StaticResource InkSoftBrush}"
-                                            BorderThickness="3"
-                                            HorizontalAlignment="Center"
-                                            SnapsToDevicePixels="True"
-                                            Opacity="0.7">
-                                        <Grid>
-                                            <Border Background="{StaticResource PaperBrush}"
-                                                    Width="72" Height="28"
-                                                    VerticalAlignment="Center"
-                                                    BorderBrush="{StaticResource InkSoftBrush}"
-                                                    BorderThickness="2"
-                                                    SnapsToDevicePixels="True"/>
-                                            <StackPanel Orientation="Horizontal"
-                                                        HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center">
-                                                <Ellipse Width="10" Height="10"
-                                                         Fill="{StaticResource InkSoftBrush}"
-                                                         Margin="0,0,16,0"/>
-                                                <Ellipse Width="10" Height="10"
-                                                         Fill="{StaticResource InkSoftBrush}"/>
-                                            </StackPanel>
-                                        </Grid>
                                     </Border>
-                                    <TextBlock Text="{DynamicResource L_EmptyTitle}"
-                                               FontSize="13"
-                                               Foreground="{StaticResource InkSoftBrush}"
-                                               HorizontalAlignment="Center"
-                                               Margin="0,12,0,2"/>
-                                    <TextBlock Text="{DynamicResource L_EmptyHint}"
+                                    <TextBlock x:Name="HelpRowText1" Grid.Column="1"
+                                               Text="{DynamicResource L_Step1Title}"
+                                               FontFamily="{StaticResource DisplayFont}"
+                                               FontSize="14" LineHeight="20" LineStackingStrategy="BlockLineHeight"
+                                               TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Button>
+
+                            <Button x:Name="HelpRow2" Style="{StaticResource HelpStepButton}" Click="HelpRow_Click" Tag="1" Margin="0,0,0,12">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Width="38" Height="38"
+                                            Background="{StaticResource PinkBrush}" Margin="0,0,14,0">
+                                        <Ellipse Width="18" Height="18" Fill="{StaticResource NightBrush}"/>
+                                    </Border>
+                                    <TextBlock x:Name="HelpRowText2" Grid.Column="1"
+                                               Text="{DynamicResource L_Step2Title}"
+                                               FontFamily="{StaticResource DisplayFont}"
+                                               FontSize="14" LineHeight="20" LineStackingStrategy="BlockLineHeight"
+                                               TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Button>
+
+                            <Button x:Name="HelpRow3" Style="{StaticResource HelpStepButton}" Click="HelpRow_Click" Tag="2" Margin="0,0,0,12">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Width="38" Height="38"
+                                            Background="{StaticResource AmberBrush}" Margin="0,0,14,0">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Rectangle Width="5" Height="18" Fill="{StaticResource NightBrush}" Margin="0,0,5,0"/>
+                                            <Rectangle Width="5" Height="18" Fill="{StaticResource NightBrush}"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <TextBlock x:Name="HelpRowText3" Grid.Column="1"
+                                               Text="{DynamicResource L_Step3Title}"
+                                               FontFamily="{StaticResource DisplayFont}"
+                                               FontSize="14" LineHeight="20" LineStackingStrategy="BlockLineHeight"
+                                               TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Button>
+
+                            <Button x:Name="HelpRow4" Style="{StaticResource HelpStepButton}" Click="HelpRow_Click" Tag="3">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Width="38" Height="38"
+                                            Background="{StaticResource LilacBrush}" Margin="0,0,14,0">
+                                        <Border Width="24" Height="16" BorderBrush="{StaticResource NightBrush}" BorderThickness="2">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Rectangle Width="3" Height="3" Fill="{StaticResource NightBrush}" Margin="0,0,6,0"/>
+                                                <Rectangle Width="3" Height="3" Fill="{StaticResource NightBrush}"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Border>
+                                    <TextBlock x:Name="HelpRowText4" Grid.Column="1"
+                                               Text="{DynamicResource L_Step4Title}"
+                                               FontFamily="{StaticResource DisplayFont}"
+                                               FontSize="14" LineHeight="20" LineStackingStrategy="BlockLineHeight"
+                                               TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Button>
+
+                            <Border BorderBrush="{StaticResource PanelSelBrush}" BorderThickness="2"
+                                    Padding="18,16" Margin="0,26,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource L_CheatTitle}"
+                                               FontFamily="{StaticResource DisplayFont}"
                                                FontSize="12"
-                                               Foreground="{StaticResource InkSoftBrush}"
-                                               HorizontalAlignment="Center"
-                                               Opacity="0.7"/>
+                                               Foreground="{StaticResource AmberBrush}"/>
+                                    <StackPanel Margin="0,12,0,0">
+                                        <Grid Margin="0,0,0,9">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0" Background="{StaticResource LilacBrush}" Padding="9,3" MinWidth="64" Margin="0,0,12,0">
+                                                <TextBlock Text="SPACE" FontFamily="{StaticResource DisplayFont}" FontSize="12"
+                                                           Foreground="{StaticResource NightBrush}" TextAlignment="Center"/>
+                                            </Border>
+                                            <TextBlock Grid.Column="1" Text="{DynamicResource L_Key1}" FontSize="13"
+                                                       Foreground="{StaticResource Mute2Brush}" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <Grid Margin="0,0,0,9">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0" Background="{StaticResource LilacBrush}" Padding="9,3" MinWidth="64" Margin="0,0,12,0">
+                                                <TextBlock Text="P" FontFamily="{StaticResource DisplayFont}" FontSize="12"
+                                                           Foreground="{StaticResource NightBrush}" TextAlignment="Center"/>
+                                            </Border>
+                                            <TextBlock Grid.Column="1" Text="{DynamicResource L_Key2}" FontSize="13"
+                                                       Foreground="{StaticResource Mute2Brush}" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <Grid Margin="0,0,0,9">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0" Background="{StaticResource LilacBrush}" Padding="9,3" MinWidth="64" Margin="0,0,12,0">
+                                                <TextBlock Text="CTRL+O" FontFamily="{StaticResource DisplayFont}" FontSize="12"
+                                                           Foreground="{StaticResource NightBrush}" TextAlignment="Center"/>
+                                            </Border>
+                                            <TextBlock Grid.Column="1" Text="{DynamicResource L_Key3}" FontSize="13"
+                                                       Foreground="{StaticResource Mute2Brush}" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0" Background="{StaticResource LilacBrush}" Padding="9,3" MinWidth="64" Margin="0,0,12,0">
+                                                <TextBlock Text="F1" FontFamily="{StaticResource DisplayFont}" FontSize="12"
+                                                           Foreground="{StaticResource NightBrush}" TextAlignment="Center"/>
+                                            </Border>
+                                            <TextBlock Grid.Column="1" Text="{DynamicResource L_Key4}" FontSize="13"
+                                                       Foreground="{StaticResource Mute2Brush}" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </StackPanel>
                                 </StackPanel>
-                            </Grid>
-                        </ContentControl>
-
-                        <!-- corner sparkles -->
-                        <TextBlock Grid.Row="0" Grid.Column="0"
-                                   Text="★"
-                                   FontSize="16"
-                                   Foreground="{StaticResource GoldDeepBrush}"
-                                   HorizontalAlignment="Left" VerticalAlignment="Top"
-                                   Margin="-6,-6,0,0"
-                                   Opacity="0.7"
-                                   IsHitTestVisible="False"/>
-                        <TextBlock Grid.Row="0" Grid.Column="2"
-                                   Text="♥"
-                                   FontSize="16"
-                                   Foreground="{StaticResource AccentDeepBrush}"
-                                   HorizontalAlignment="Right" VerticalAlignment="Top"
-                                   Margin="0,-6,-6,0"
-                                   Opacity="0.7"
-                                   IsHitTestVisible="False"/>
-                        <TextBlock Grid.Row="2" Grid.Column="0"
-                                   Text="♪"
-                                   FontSize="16"
-                                   Foreground="{StaticResource LilacDeepBrush}"
-                                   HorizontalAlignment="Left" VerticalAlignment="Bottom"
-                                   Margin="-6,0,0,-6"
-                                   Opacity="0.7"
-                                   IsHitTestVisible="False"/>
-
-                    </Grid>
-                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
             </Grid>
-        </Border>
-    </Grid>
+        </Grid>
+    </Border>
 </Window>

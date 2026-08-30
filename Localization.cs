@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Windows;
 
 namespace CocoaRecorder;
@@ -51,48 +51,72 @@ public static class L10n
 
     private static readonly Dictionary<string, (string Ko, string En)> Table = new()
     {
-        // 타이틀바
-        ["WindowTitle"]     = ("♪  코코아 레코더 — 포근한 시스템 녹음기  ♪", "♪  Cocoa Recorder — cozy system audio  ♪"),
+        // 타이틀바 탭 — 레일의 SOURCE / FORMAT 같은 라벨은 디자인대로 영문 고정이다.
+        ["NavRecord"]       = ("녹음", "record"),
+        ["NavLibrary"]      = ("보관함", "library"),
+        ["NavSettings"]     = ("설정", "settings"),
+        ["NavHelp"]         = ("도움말", "help"),
 
-        // 상태 표시
-        ["StatusIdle"]      = ("○ 대기 중", "○ Standing by"),
-        ["StatusRecording"] = ("● 녹음 중...", "● Recording..."),
-        ["StatusPaused"]    = ("‖ 일시정지", "‖ Paused"),
-        ["StatusCountdown"] = ("♪ 곧 시작...", "♪ Starting soon..."),
+        // 상태 표시 — 점은 별도 요소라 글머리 기호를 붙이지 않는다.
+        ["StatusIdle"]      = ("대기 중", "STANDING BY"),
+        ["StatusRecording"] = ("녹음 중", "RECORDING"),
+        ["StatusPaused"]    = ("일시정지", "PAUSED"),
+        ["StatusCountdown"] = ("곧 시작", "STARTING IN"),
         ["SystemSound"]     = ("시스템 사운드", "system audio"),
 
         // 트랜스포트
-        ["RecordStart"]     = ("녹음 시작", "Record"),
-        ["Recording"]       = ("녹음 중...", "Recording..."),
-        ["PauseBtn"]        = ("일시정지", "Pause"),
-        ["ResumeBtn"]       = ("재개", "Resume"),
-        ["StopBtn"]         = ("정지", "Stop"),
-        ["CountdownUnit"]   = ("{0}초", "{0} sec"),
-        ["CountdownZero"]   = ("바로", "Instant"),
+        ["RecordStart"]     = ("녹음", "RECORD"),
+        ["PauseBtn"]        = ("일시정지", "PAUSE"),
+        ["ResumeBtn"]       = ("재개", "RESUME"),
+        ["StopBtn"]         = ("정지", "STOP"),
+        ["CancelBtn"]       = ("취소", "CANCEL"),
+        ["CountdownUnit"]   = ("{0}초", "{0}s"),
+        ["CountdownZero"]   = ("바로", "off"),
+        ["CountdownReady"]  = ("준비하세요 — ESC 로 취소", "GET READY — ESC to cancel"),
         ["CountdownHint"]   = ("녹음이 시작되기까지 기다릴 시간이에요. 0으로 두면 누르는 즉시 녹음해요",
                                "How long to wait before recording starts — at 0 it records the moment you press Record"),
-        ["ShortcutHint"]    = ("Space 시작/정지 · P 일시정지 · Ctrl+O 폴더",
-                               "Space start/stop · P pause · Ctrl+O folder"),
+        ["ShortcutHint"]    = ("SPACE 시작/정지 · P 일시정지 · CTRL+O 폴더",
+                               "SPACE start/stop · P pause · CTRL+O folder"),
 
-        // 설정 패널
-        ["SettingsTitle"]   = ("⚙  녹음 설정", "⚙  Recording settings"),
-        ["InputDevice"]     = ("🎤  입력 장치", "🎤  Input device"),
-        ["OutputFormat"]    = ("🔊  출력 포맷", "🔊  Output format"),
-        ["Mp3Quality"]      = ("↳  MP3 품질", "↳  MP3 quality"),
-        ["InputLevel"]      = ("입력 레벨", "Input level"),
-        ["SaveFolder"]      = ("저장 폴더", "Save folder"),
-        ["ChangeBtn"]       = ("변경", "Change"),
+        // 단축키 목록 (settings 탭)
+        ["Key1"]            = ("녹음 시작 · 정지", "start or stop recording"),
+        ["Key2"]            = ("일시정지 · 다시 시작", "pause and resume"),
+        ["Key3"]            = ("저장 폴더 열기", "open the save folder"),
+        ["Key4"]            = ("코코아 다시 부르기", "bring cocoa back here"),
 
-        // 마스코트 카드
-        ["MascotName"]      = ("코코아 (Cocoa)", "Cocoa"),
+        // 도움말 — 코코아가 직접 설명하는 네 단계
+        ["HelpTitle"]       = ("이렇게 쓰면 돼냥", "HOW THIS WORKS"),
+        ["HelpSub"]         = ("네 가지만 알면 끝이다냥. 아무 단계나 톡 눌러보라냥.",
+                               "Four things and you're done. Tap any step to hear it again."),
+        ["CocoaSays"]       = ("코코아가 말한다냥", "COCOA SAYS"),
+        ["CheatTitle"]      = ("코코아 치트시트", "COCOA'S CHEAT SHEET"),
+        ["HelpBack"]        = ("뒤로", "BACK"),
+        ["HelpNext"]        = ("다음", "NEXT"),
+        ["HelpDone"]        = ("알았다냥 — 녹음하자!", "GOT IT — LET'S RECORD"),
+        ["HelpFoot"]        = ("✦ 코코아 › 도움말 이나 F1 로 다시 부를 수 있다냥",
+                               "reopen anytime from ✦ cocoa › help · F1"),
+        ["Step1Title"]      = ("1. 소리가 어디서 나는지 알려주라냥", "1. tell me where the sound is"),
+        ["Step1Body"]       = ("스피커에서 나오는 소리를 내가 그대로 듣고 있다냥. 마이크는 필요 없어냥 — 출력 장치만 골라주면 내가 쫑긋 듣고 있을게냥.",
+                               "I listen to whatever your speakers are already playing. No microphone needed — just pick the output device and I'll hear it."),
+        ["Step2Title"]      = ("2. 분홍색 버튼을 눌러주라냥", "2. press the pink button"),
+        ["Step2Body"]       = ("SPACE 를 눌러도 된다냥. 카운트다운을 켜두면 3 · 2 · 1 세고 시작하니까 탭으로 돌아갈 시간이 생긴다냥.",
+                               "SPACE works too. If you set a countdown I'll wait 3 · 2 · 1 first, so you have time to get back to your tab."),
+        ["Step3Title"]      = ("3. 언제든 멈춰도 괜찮다냥", "3. pause whenever you like"),
+        ["Step3Body"]       = ("P 로 멈추고 P 로 다시 시작한다냥. 그동안 나는 몸을 말고 낮잠 자면서 시간을 그대로 지켜줄게냥.",
+                               "P pauses, P resumes. I curl up and keep the timer exactly where you left it, so nothing gets lost."),
+        ["Step4Title"]      = ("4. 녹음한 건 아래층에 있다냥", "4. your tapes live downstairs"),
+        ["Step4Body"]       = ("테이프마다 버튼이 붙어 있다냥 — ▶ 로 듣고, ✕ 로 버린다냥. 이름은 두 번 눌러서 바꾸면 된다냥!",
+                               "Every tape carries its own buttons — ▶ to listen, ✕ to bin it. Double-click the name to rename. That's everything!"),
+
+        // 마스코트 인사
         ["Hello"]           = ("안녕! 오늘은\n뭘 녹음할까?", "Hi! What are we\nrecording today?"),
 
         // 보관함
-        ["LibraryTitle"]    = ("내 녹음 보관함", "My recordings"),
-        ["CountFmt"]        = (" · {0}개", " · {0}"),
-        ["CardTooltip"]     = ("더블클릭으로 이름 변경 · 끌어서 내보내기", "Double-click to rename · drag out to export"),
-        ["EmptyTitle"]      = ("아직 녹음이 없어요.", "No recordings yet."),
-        ["EmptyHint"]       = ("Space를 눌러 시작!", "Press Space to start!"),
+        ["CountFmt"]        = ("{0}개", "{0} RECORDINGS"),
+        ["RecentMore"]      = ("그 밖에 {0}개 — 보관함 탭에 전부 있어요", "{0} more — the library tab has them all"),
+        ["CardTooltip"]     = ("더블클릭으로 이름 변경 · 끌어서 내보내기", "double-click to rename · drag out to export"),
+        ["EmptyTitle"]      = ("아직 테이프가 없어요", "no tapes yet"),
+        ["EmptyHint"]       = ("녹음을 누르면 코코아가 듣기 시작해요", "hit RECORD and cocoa will start listening"),
 
         // 다이얼로그 / 카운트다운
         ["FolderDialogTitle"] = ("저장 폴더 선택", "Choose a save folder"),
