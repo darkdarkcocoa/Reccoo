@@ -80,6 +80,11 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+
+        // 기본은 영어지만, 지난번에 고른 언어가 있으면 그걸로 시작한다.
+        // 아직 LanguageChanged 를 구독하기 전이라 화면 재조립이 돌지 않는다.
+        if (Enum.TryParse<AppLanguage>(_preferences.Language, out var saved)) L10n.Set(saved);
+
         UpdateLangToggle();
         L10n.LanguageChanged += OnLanguageChanged;
 
@@ -524,6 +529,8 @@ public partial class MainWindow : Window
     {
         if (!IsLoaded) return; // 초기 IsChecked 세팅(생성자)에서는 무시
         L10n.Set(ReferenceEquals(sender, KorToggle) ? AppLanguage.Korean : AppLanguage.English);
+        _preferences.Language = L10n.Current.ToString();
+        _preferences.Save();
     }
 
     private void UpdateLangToggle()
@@ -1517,6 +1524,9 @@ public partial class MainWindow : Window
         public bool? CountdownEnabled { get; set; }
 
         public string? SaveFolder { get; set; }
+
+        /// <summary>타이틀바에서 고른 언어. 비어 있으면 영어로 시작한다.</summary>
+        public string? Language { get; set; }
 
         /// <summary>켤 때 새 버전을 확인할지. 끄면 앱이 바깥으로 나가지 않는다.</summary>
         public bool CheckForUpdates { get; set; } = true;

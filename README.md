@@ -29,7 +29,7 @@ Cocoa Recorder (formerly Reccoo) is a small recorder that captures whatever your
 | **Mascot dialogue** | ✅ | ✅ |
 | **README** | ✅ | ✅ |
 
-Switch anytime with the **KOR | EN toggle** in the title bar. The app follows your system language on first launch.
+The app starts in English. Switch anytime with the **KOR | EN toggle** in the title bar — your choice is remembered for next time.
 Interested in adding another language? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---

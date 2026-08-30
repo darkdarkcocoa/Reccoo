@@ -16,12 +16,13 @@ public static class L10n
     public static bool IsKorean => Current == AppLanguage.Korean;
     public static event Action? LanguageChanged;
 
-    /// <summary>시스템 UI 언어에 맞춰 시작 언어 결정 (ko → 한국어, 그 외 → English).</summary>
+    /// <summary>
+    /// 시작 언어는 언제나 영어다. 앱을 처음 보는 사람이 누구든 같은 화면에서 출발하고,
+    /// 한국어는 타이틀바 토글로 바꾼다 — 그 선택은 설정에 저장되어 다음 실행에도 유지된다.
+    /// </summary>
     public static void Init()
     {
-        Current = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ko"
-            ? AppLanguage.Korean
-            : AppLanguage.English;
+        Current = AppLanguage.English;
         Apply();
     }
 
