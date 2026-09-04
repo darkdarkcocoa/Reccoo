@@ -165,5 +165,76 @@ public static class Mascot
         foreach (var (x, y) in tailInk) Put(x, y, ink);
     }
 
+    /// <summary>스위치 얼굴 스프라이트의 격자 크기.</summary>
+    public const int FaceColumns = 16;
+    public const int FaceRows = 9;
+
+    /// <summary>
+    /// 냥 소리 스위치에 쓰는 작은 얼굴 — 16칸 × 9칸. 깨어 있으면 앰버 얼굴에 음표, 잠들면 회색 얼굴에 z.
+    /// </summary>
+    public static void DrawFace(Canvas canvas, int cell, bool awake)
+    {
+        canvas.Children.Clear();
+
+        // 얼굴과 오른쪽 위 표시는 같은 색 — 깨어 있으면 앰버, 잠들면 회색
+        var fur = awake ? Res("AmberBrush") : Res("MuteBrush");
+        var ink = Res("InkBrush");
+
+        void Put(int x, int y, Brush c)
+        {
+            var r = new WpfRectangle
+            {
+                Width = cell,
+                Height = cell,
+                Fill = c,
+                SnapsToDevicePixels = true,
+            };
+            Canvas.SetLeft(r, x * cell);
+            Canvas.SetTop(r, y * cell);
+            canvas.Children.Add(r);
+        }
+        void Row(int y, int from, int to, Brush c)
+        {
+            for (int x = from; x <= to; x++) Put(x, y, c);
+        }
+
+        // 귀 → 머리 → 턱 순서로 11칸 너비의 얼굴
+        Put(0, 0, fur); Put(10, 0, fur);
+        Row(1, 0, 1, fur); Row(1, 9, 10, fur);
+        for (int y = 2; y <= 6; y++) Row(y, 0, 10, fur);
+        Row(7, 1, 9, fur);
+        Row(8, 2, 8, fur);
+
+        // 눈 — 깨어 있으면 점, 잠들면 감은 선
+        if (awake)
+        {
+            Put(2, 4, ink); Put(8, 4, ink);
+        }
+        else
+        {
+            Row(4, 1, 2, ink); Row(4, 8, 9, ink);
+        }
+
+        // 코와 입
+        Put(5, 5, ink);
+        Put(4, 6, ink); Put(6, 6, ink);
+
+        // 오른쪽 위 — 음표 또는 z (12~15열, 얼굴과 한 칸 띄운다)
+        if (awake)
+        {
+            Put(14, 0, fur); Put(15, 0, fur);
+            Put(14, 1, fur);
+            Put(14, 2, fur);
+            Put(13, 3, fur); Put(14, 3, fur);
+        }
+        else
+        {
+            Row(0, 12, 15, fur);
+            Put(14, 1, fur);
+            Put(13, 2, fur);
+            Row(3, 12, 15, fur);
+        }
+    }
+
     private static Brush Res(string key) => (Brush)Application.Current.Resources[key];
 }

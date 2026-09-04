@@ -792,6 +792,14 @@
                                                 <Rectangle Width="3" Height="11" Fill="{StaticResource LilacBrush}" HorizontalAlignment="Center" SnapsToDevicePixels="True"/>
                                             </Grid>
                                         </Button>
+
+                                        <!-- 냥 소리 스위치 — 켜져 있으면 앰버 얼굴에 음표, 꺼지면 잠든 회색 얼굴 -->
+                                        <ToggleButton x:Name="CountdownSoundToggle"
+                                                      Style="{StaticResource FaceToggle}"
+                                                      Checked="CountdownSound_Toggled" Unchecked="CountdownSound_Toggled"
+                                                      Margin="10,0,0,0">
+                                            <Canvas x:Name="CountdownSoundFace" Width="32" Height="18"/>
+                                        </ToggleButton>
                                     </StackPanel>
                                     <TextBlock Text="{DynamicResource L_CountdownHint}"
                                                FontSize="12"
@@ -953,7 +961,19 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <TextBlock Text="COUNTDOWN" Style="{StaticResource SectionLabel}"/>
+                    <!-- 라벨 오른쪽 끝에 냥 소리 스위치 — 설정 탭의 것과 같은 상태를 보여 준다 -->
+                    <Grid Height="14" Margin="0,0,0,7">
+                        <TextBlock Text="COUNTDOWN" Style="{StaticResource SectionLabel}" Margin="0" VerticalAlignment="Center"/>
+                        <ToggleButton x:Name="CountdownSoundToggleRail"
+                                      Style="{StaticResource FaceToggle}"
+                                      Checked="CountdownSound_Toggled" Unchecked="CountdownSound_Toggled"
+                                      BorderThickness="0"
+                                      Width="36" Height="20"
+                                      Margin="0,-3,0,-3"
+                                      HorizontalAlignment="Right">
+                            <Canvas x:Name="CountdownSoundFaceRail" Width="32" Height="18"/>
+                        </ToggleButton>
+                    </Grid>
                     <UniformGrid Columns="4" Margin="0,0,0,12">
                         <RadioButton x:Name="CountdownOff" Style="{StaticResource AmberSegToggle}" GroupName="Countdown"
                                      Content="off" Tag="0" Checked="CountdownPreset_Checked" Margin="0,0,3,0"/>

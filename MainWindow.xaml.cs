@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -624,6 +625,18 @@ public partial class MainWindow : Window
         UpdateCountdownVisual();
     }
 
+    /// <summary>두 얼굴 중 어느 쪽을 눌러도 여기로 온다. 코드가 상태를 맞추는 중이면 그냥 지나간다.</summary>
+    private void CountdownSound_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (!IsInitialized || _syncingCountdown) return;
+        _preferences.CountdownSound = (sender as ToggleButton)?.IsChecked == true;
+        _preferences.Save();
+        UpdateCountdownVisual();
+        MascotSpeech.Text = L10n.T(_preferences.CountdownSound ? "MsgSoundOn" : "MsgSoundOff");
+        // 켜는 순간 마지막 냥을 한 번 들려줘서 어떤 소리인지 바로 알게 한다.
+        if (_preferences.CountdownSound) _chime.Play(CountdownChime.ClipFor(1, 1));
+    }
+
     private void UpdateCountdownVisual()
     {
         int seconds = _preferences.CountdownSeconds;
@@ -637,13 +650,28 @@ public partial class MainWindow : Window
         Countdown3.IsChecked = seconds == 3;
         Countdown5.IsChecked = seconds == 5;
         Countdown10.IsChecked = seconds == 10;
-        _syncingCountdown = false;
 
         bool editable = State is Transport.Idle;
         CountdownDownButton.IsEnabled = editable && seconds > 0;
         CountdownUpButton.IsEnabled = editable && seconds < AppPreferences.MaxCountdownSeconds;
         foreach (var preset in new[] { CountdownOff, Countdown3, Countdown5, Countdown10 })
             preset.IsEnabled = editable;
+
+        // 냥 소리 — 카운트다운이 0이면 낼 자리가 없고, 클립을 못 읽었으면 켤 수도 없다.
+        bool sound = _preferences.CountdownSound && _chime.IsAvailable;
+        foreach (var (toggle, face) in new[]
+                 {
+                     (CountdownSoundToggle, CountdownSoundFace),
+                     (CountdownSoundToggleRail, CountdownSoundFaceRail),
+                 })
+        {
+            toggle.IsChecked = sound;
+            toggle.IsEnabled = editable && seconds > 0 && _chime.IsAvailable;
+            toggle.ToolTip = L10n.T(
+                seconds == 0 ? "SoundNoneHint" : sound ? "SoundOnHint" : "SoundOffHint");
+            Mascot.DrawFace(face, 2, awake: sound);
+        }
+        _syncingCountdown = false;
     }
 
     private void UpdateFormatInfo()
@@ -699,6 +727,10 @@ public partial class MainWindow : Window
 
     private DispatcherTimer? _countdownTimer;
     private int _countdownValue;
+    private int _countdownTotal;
+
+    /// <summary>카운트다운의 냥 소리. 리소스가 없거나 코덱이 없으면 조용한 채로 만들어진다.</summary>
+    private readonly CountdownChime _chime = new();
 
     private void StartRecording()
     {
@@ -716,6 +748,7 @@ public partial class MainWindow : Window
     private void BeginCountdown(int from)
     {
         _countdownValue = from;
+        _countdownTotal = from;
 
         _countdownTimer?.Stop();
         _countdownTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(900) };
@@ -724,6 +757,7 @@ public partial class MainWindow : Window
 
         CountdownOverlay.Visibility = Visibility.Visible;
         ApplyCountdownVisual();
+        PlayChime();
         UpdateTransport();
     }
 
@@ -738,7 +772,15 @@ public partial class MainWindow : Window
         else
         {
             ApplyCountdownVisual();
+            PlayChime();
         }
+    }
+
+    /// <summary>숫자가 바뀔 때마다 한 번. 0 은 여기까지 오지 않으니 녹음 첫머리에 냥이 섞이지 않는다.</summary>
+    private void PlayChime()
+    {
+        if (!_preferences.CountdownSound) return;
+        _chime.Play(CountdownChime.ClipFor(_countdownValue, _countdownTotal));
     }
 
     private void ApplyCountdownVisual()
@@ -757,6 +799,7 @@ public partial class MainWindow : Window
     {
         _countdownTimer?.Stop();
         _countdownTimer = null;
+        _chime.Stop();
         CountdownOverlay.Visibility = Visibility.Collapsed;
     }
 
@@ -770,6 +813,8 @@ public partial class MainWindow : Window
 
     private void ActuallyStartRecording()
     {
+        // 어느 길로 왔든 녹음 첫머리에 냥이 섞이면 안 된다 — 미리 듣기가 아직 울리고 있을 수 있다.
+        _chime.Stop();
         if (DeviceCombo.SelectedItem is not MMDevice device)
         {
             UpdateTransport();
@@ -1518,6 +1563,9 @@ public partial class MainWindow : Window
         public const int MaxCountdownSeconds = 10;
 
         public int CountdownSeconds { get; set; } = DefaultCountdownSeconds;
+
+        /// <summary>카운트다운 숫자마다 냥 소리를 낼지. 0 이 되는 순간은 녹음이 시작되므로 언제나 조용하다.</summary>
+        public bool CountdownSound { get; set; } = true;
 
         /// <summary>카운트다운 길이를 고를 수 없던 버전이 쓰던 값. 한 번 옮겨 담고 나면 더 쓰지 않는다.</summary>
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

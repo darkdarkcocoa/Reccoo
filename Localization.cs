@@ -76,6 +76,12 @@ public static class L10n
         ["CountdownReady"]  = ("준비하세요 — ESC 로 취소", "GET READY — ESC to cancel"),
         ["CountdownHint"]   = ("녹음이 시작되기까지 기다릴 시간이에요. 0으로 두면 누르는 즉시 녹음해요",
                                "How long to wait before recording starts — at 0 it records the moment you press Record"),
+        ["SoundOnHint"]     = ("카운트다운 숫자마다 코코아가 냥 하고 세어 줘요 — 눌러서 끄기",
+                               "Cocoa meows the countdown — click to mute"),
+        ["SoundOffHint"]    = ("카운트다운이 조용해요 — 눌러서 냥 소리 켜기",
+                               "The countdown is silent — click to let Cocoa meow"),
+        ["SoundNoneHint"]   = ("카운트다운이 0이면 냥 소리를 낼 자리가 없어요",
+                               "No countdown, no meow — set a countdown first"),
         ["ShortcutHint"]    = ("SPACE 시작/정지 · P 일시정지 · CTRL+O 폴더",
                                "SPACE start/stop · P pause · CTRL+O folder"),
 
@@ -100,8 +106,8 @@ public static class L10n
         ["Step1Body"]       = ("스피커에서 나오는 소리를 내가 그대로 듣고 있다냥. 마이크는 필요 없어냥 — 출력 장치만 골라주면 내가 쫑긋 듣고 있을게냥.",
                                "I listen to whatever your speakers are already playing. No microphone needed — just pick the output device and I'll hear it."),
         ["Step2Title"]      = ("2. 분홍색 버튼을 눌러주라냥", "2. press the pink button"),
-        ["Step2Body"]       = ("SPACE 를 눌러도 된다냥. 카운트다운을 켜두면 3 · 2 · 1 세고 시작하니까 탭으로 돌아갈 시간이 생긴다냥.",
-                               "SPACE works too. If you set a countdown I'll wait 3 · 2 · 1 first, so you have time to get back to your tab."),
+        ["Step2Body"]       = ("SPACE 를 눌러도 된다냥. 카운트다운을 켜두면 3 · 2 · 1 세고 시작하니까 탭으로 돌아갈 시간이 생긴다냥. 숫자마다 내가 냥 하고 세어줄게냥 — 조용히 필요하면 내 얼굴 버튼을 눌러달라냥.",
+                               "SPACE works too. If you set a countdown I'll wait 3 · 2 · 1 first, so you have time to get back to your tab. I'll meow each count — tap my face button if you need me quiet."),
         ["Step3Title"]      = ("3. 언제든 멈춰도 괜찮다냥", "3. pause whenever you like"),
         ["Step3Body"]       = ("P 로 멈추고 P 로 다시 시작한다냥. 그동안 나는 몸을 말고 낮잠 자면서 시간을 그대로 지켜줄게냥.",
                                "P pauses, P resumes. I curl up and keep the timer exactly where you left it, so nothing gets lost."),
@@ -130,6 +136,8 @@ public static class L10n
 
         // 다이얼로그 / 카운트다운
         ["FolderDialogTitle"] = ("저장 폴더 선택", "Choose a save folder"),
+        ["MsgSoundOn"]      = ("냥냥! 내가 세어 줄게 ♪", "Meow! I'll count for you ♪"),
+        ["MsgSoundOff"]     = ("알았어, 조용히 셀게... zZ", "Okay, I'll count quietly... zZ"),
         ["Count3"]          = ("셋!", "Three!"),
         ["Count2"]          = ("둘!", "Two!"),
         ["Count1"]          = ("하나!", "One!"),

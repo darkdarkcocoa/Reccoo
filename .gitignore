@@ -72,3 +72,6 @@ secrets.json
 
 # Claude Design handoff export (scratch, not source)
 *-handoff/
+
+# Raw sound takes the user drops in before they are trimmed into Sounds/
+/sound/

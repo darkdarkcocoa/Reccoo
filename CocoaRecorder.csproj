@@ -25,4 +25,13 @@
     <Resource Include="Fonts\SUIT-SemiBold.ttf" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Countdown meows, CC0. The closing ticks 3→2→1 play meow-1→2→3; meow-4/5 alternate on earlier ticks. -->
+    <Resource Include="Sounds\meow-1.mp3" />
+    <Resource Include="Sounds\meow-2.mp3" />
+    <Resource Include="Sounds\meow-3.mp3" />
+    <Resource Include="Sounds\meow-4.mp3" />
+    <Resource Include="Sounds\meow-5.mp3" />
+  </ItemGroup>
+
 </Project>

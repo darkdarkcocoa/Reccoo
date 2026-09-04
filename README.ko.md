@@ -40,7 +40,7 @@
 ## ⬇️ 다운로드
 내려받아 더블클릭하면 바로 실행됩니다. 별도의 설치 과정이나 .NET 런타임 설치가 필요하지 않습니다.
 
-> 앱은 켤 때 한 번 GitHub에 새 버전이 있는지 물어보고, 있으면 **업데이트** 링크에 **NEW** 표시를 띄웁니다. 사용자에 대한 정보는 아무것도 보내지 않고, 스스로 무언가를 받아오지도 않습니다. `%LOCALAPPDATA%\CocoaRecorder\settings.json`에서 `"CheckForUpdates": false`로 끌 수 있습니다.
+> 앱은 켤 때 한 번 GitHub에 새 버전이 있는지 물어보고, 있으면 **업데이트** 링크에 **NEW** 표시를 띄웁니다. 사용자에 대한 정보는 아무것도 보내지 않고, 스스로 무언가를 받아오지도 않습니다. `%LOCALAPPDATA%\CocoaRecorder\settings.json`에서 `"CheckForUpdates": false`로 끌 수 있습니다 (카운트다운 냥 소리도 같은 파일의 `"CountdownSound"`에 저장됩니다).
 >
 > **[📦 최신 Windows 릴리스 다운로드](https://github.com/darkdarkcocoa/cocoa-recorder/releases/latest)** — `CocoaRecorder.exe`를 받으세요. 이름 변경 전 릴리스의 파일명은 `Reccoo.exe`입니다.
 > ([![최신 버전](https://img.shields.io/github/v/release/darkdarkcocoa/cocoa-recorder?style=flat-square&label=%EC%B5%9C%EC%8B%A0%20%EB%B2%84%EC%A0%84&color=b9e4c9)](https://github.com/darkdarkcocoa/cocoa-recorder/releases/latest) · 릴리스 시점: [![릴리스 날짜](https://img.shields.io/github/release-date/darkdarkcocoa/cocoa-recorder?style=flat-square&label=&color=ffd97a)](https://github.com/darkdarkcocoa/cocoa-recorder/releases/latest))
@@ -55,7 +55,7 @@
 **🎙️ 녹음**
 
 - **시스템 사운드 캡처** — 스피커로 출력되는 소리를 손실 없이 그대로 녹음합니다. (WASAPI loopback)
-- **카운트다운 조절** — 녹음이 시작되기까지 기다릴 시간을 0~10초 사이에서 고를 수 있습니다. 0으로 두면 누르는 즉시 녹음하고, 길게 두면 다른 창으로 넘어가 재생을 누를 여유가 생깁니다.
+- **카운트다운 조절** — 녹음이 시작되기까지 기다릴 시간을 0~10초 사이에서 고를 수 있습니다. 0으로 두면 누르는 즉시 녹음하고, 길게 두면 다른 창으로 넘어가 재생을 누를 여유가 생깁니다. 숫자마다 코코아가 냥 하고 세어 줘서 다른 창에 가 있어도 귀로 알 수 있고, 옆의 고양이 얼굴 버튼으로 끌 수 있습니다. 0이 되는 순간에는 울지 않으니 녹음 첫머리는 언제나 깨끗합니다.
 - **일시정지 / 재개** — 원치 않는 구간은 잠시 멈췄다가 이어서 녹음할 수 있습니다.
 - **WAV / MP3 선택** — 원본 그대로 보관하고 싶다면 WAV, 용량을 아끼고 싶다면 MP3를 선택할 수 있습니다. (LO / MED / HI 품질)
 
@@ -128,6 +128,7 @@ cocoa-recorder/
 ├── NightSky.cs               # 픽셀 달과 반짝이는 별밭
 ├── Localization.cs           # 한국어 / 영어 문구
 ├── AudioRecorder.cs          # NAudio 캡처 + WAV/MP3 인코딩
+├── CountdownChime.cs         # 카운트다운 냥 소리 재생
 ├── AssemblyInfo.cs
 ├── CocoaRecorder.csproj
 ├── Fonts/
@@ -135,6 +136,8 @@ cocoa-recorder/
 │   ├── neodgm.ttf            # OFL 1.1 (디스플레이 글꼴)
 │   ├── SUIT-*.ttf            # OFL 1.1 (가독성 UI 글꼴)
 │   └── *-OFL.txt             # 폰트 라이선스
+├── Sounds/
+│   └── meow-1..5.mp3         # 카운트다운 냥 소리 (CC0)
 └── design/                   # Claude Design 시안 (gitignored)
 ```
 
@@ -148,6 +151,12 @@ cocoa-recorder/
 | [SUIT](https://github.com/sun-typeface/SUIT) | 설명, 경로, 장치명과 보관함 정보 | OFL 1.1 |
 
 중요한 조작부에는 픽셀 감성을 유지하고, 정보량이 많은 한글·영문 UI에는 읽기 쉬운 글꼴을 적용했습니다.
+
+## 🔊 임베드 사운드
+
+| 사운드 | 용도 | 라이선스 |
+|--------|------|----------|
+| meow-1…5.mp3 | 카운트다운 소리 | CC0 |
 
 ---
 

@@ -460,6 +460,56 @@
                 </Setter>
             </Style>
 
+            <!-- 냥 소리 스위치 — 스테퍼와 같은 높이의 네모 안에 작은 고양이 얼굴 -->
+            <Style x:Key="FaceToggle" TargetType="ToggleButton">
+                <Setter Property="Width" Value="46"/>
+                <Setter Property="Height" Value="28"/>
+                <Setter Property="BorderThickness" Value="2"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
+                <Setter Property="ToolTipService.ShowOnDisabled" Value="True"/>
+                <!-- 포커스 점선을 바깥에 두른다 — 안쪽에 그리면 얼굴 위를 지나간다 -->
+                <Setter Property="FocusVisualStyle">
+                    <Setter.Value>
+                        <Style>
+                            <Setter Property="Control.Template">
+                                <Setter.Value>
+                                    <ControlTemplate>
+                                        <Rectangle Stroke="{StaticResource MintBrush}"
+                                                   StrokeThickness="2"
+                                                   StrokeDashArray="2 2"
+                                                   Margin="-4"
+                                                   SnapsToDevicePixels="True"/>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Border x:Name="bd"
+                                    Background="Transparent"
+                                    BorderBrush="{StaticResource LineBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="bd" Property="Background" Value="{StaticResource PanelSelBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.35"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
             <!-- ============================================================
                  NightComboBox — 장치 선택
                  ============================================================ -->
