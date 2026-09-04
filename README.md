@@ -54,6 +54,7 @@ Full changelogs are on the [Releases page](https://github.com/darkdarkcocoa/coco
 **🎙️ Recording**
 
 - **System audio capture** — records whatever comes out of your speakers, losslessly (WASAPI loopback)
+- **Mini mode** — the cat-face button in the title bar shrinks the whole app into a tiny always-on-top card you can drag anywhere. Record, stop and set the countdown right there, or press the global hotkey shown on the card (`F3` where it's free) from any window. While recording, Cocoa puts on headphones and bobs along while pixel notes float up.
 - **Adjustable countdown** — set 0–10 seconds of lead-in before recording starts. Leave it at 0 to record the moment you press the button, or stretch it to give yourself time to switch windows. Cocoa meows each count so you hear it land even from another window — mute her with the cat-face button next to the countdown. The meow never plays at 0, so your take always starts clean
 - **Pause / resume** — skip ads or unwanted sections and pick up where you left off
 - **WAV / MP3 toggle** — keep the original as WAV, or save space with MP3 (LO / MED / HI quality)
@@ -125,6 +126,8 @@ cocoa-recorder/
 ├── App.xaml.cs
 ├── MainWindow.xaml           # 1216×852 main layout
 ├── MainWindow.xaml.cs        # Transport / waveform / library logic
+├── OverlayWindow.xaml        # Mini mode — floating always-on-top card
+├── OverlayWindow.xaml.cs     # Global hotkey + state mirror of MainWindow
 ├── Mascot.cs                 # Cocoa the cat, 22×24 cells — drawn cell by cell, not an image
 ├── NightSky.cs               # Pixel moon and the twinkling star field
 ├── Localization.cs           # Korean / English strings
@@ -139,6 +142,9 @@ cocoa-recorder/
 │   └── *-OFL.txt             # Font licenses
 ├── Sounds/
 │   └── meow-1..5.mp3         # Countdown meows (CC0)
+├── Art/
+│   ├── overlay-frame.png     # Mini-mode cat-eared pixel frame
+│   └── cocoa-*.png           # Mini-mode pose sprites
 └── design/                   # Claude Design mockups (gitignored)
 ```
 

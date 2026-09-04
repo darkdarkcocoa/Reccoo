@@ -5,7 +5,7 @@ using WpfRectangle = System.Windows.Shapes.Rectangle;
 
 namespace CocoaRecorder;
 
-public enum MascotMood { Idle, Countdown, Recording, Paused }
+public enum MascotMood { Idle, Countdown, Recording, Paused, Vibing }
 
 /// <summary>
 /// 코코아 — 22칸 × 24칸 픽셀 고양이. 달 위에 앉아 있고, 상태에 따라 자세와 목걸이 색이 바뀐다.
@@ -17,7 +17,7 @@ public static class Mascot
     public const int Columns = 22;
     public const int Rows = 24;
 
-    private enum Pose { Sit, Alert, Sleep }
+    private enum Pose { Sit, Alert, Sleep, Vibe }
 
     /// <param name="collar">목걸이 색을 직접 줄 때 — 도움말이 단계별 강조색을 입히는 데 쓴다.</param>
     public static void Draw(Canvas canvas, MascotMood mood, int cell, Brush? collar = null)
@@ -34,6 +34,7 @@ public static class Mascot
         collar ??= mood switch
         {
             MascotMood.Recording => Res("PinkBrush"),
+            MascotMood.Vibing    => Res("PinkBrush"),
             MascotMood.Paused    => Res("MuteBrush"),
             _                    => Res("AmberBrush"),
         };
@@ -42,6 +43,7 @@ public static class Mascot
             MascotMood.Recording => Pose.Alert,
             MascotMood.Countdown => Pose.Alert,
             MascotMood.Paused    => Pose.Sleep,
+            MascotMood.Vibing    => Pose.Vibe,
             _                    => Pose.Sit,
         };
 
@@ -95,8 +97,8 @@ public static class Mascot
         for (int x = 5; x <= 6; x++) Mirror(x, 0, ink);
         Mirror(5, 3, pink); Mirror(6, 3, pink); Mirror(5, 2, pink);
 
-        // ---- 눈 ----
-        if (pose == Pose.Sleep)
+        // ---- 눈 ---- (Vibe 는 음악에 폭 빠져 눈을 감고 있다)
+        if (pose is Pose.Sleep or Pose.Vibe)
         {
             for (int x = 5; x <= 8; x++) { Put(x, 10, ink); Put(Columns - 1 - x, 10, ink); }
             Put(5, 11, ink); Put(8, 9, ink);
@@ -115,7 +117,7 @@ public static class Mascot
 
         // ---- 코 · 입 · 볼 · 수염 ----
         Mirror(10, 12, pink);
-        if (pose == Pose.Alert)
+        if (pose is Pose.Alert or Pose.Vibe)
         {
             Put(9, 13, ink); Put(12, 13, ink); Put(10, 13, ink); Put(11, 13, ink);
             Put(10, 14, pink); Put(11, 14, pink);
@@ -125,7 +127,9 @@ public static class Mascot
             Put(9, 13, ink); Put(12, 13, ink); Put(10, 14, ink); Put(11, 14, ink);
         }
         foreach (var (x, y) in new[] { (4, 12), (5, 12), (4, 13) }) Mirror(x, y, blush);
-        foreach (var (x, y) in new[] { (0, 11), (1, 11), (0, 13), (1, 13) }) Mirror(x, y, ink);
+        // 수염 — Vibe 는 헤드폰 귀마개가 이 자리를 덮으므로 그리지 않는다 (남는 픽셀이 얼룩처럼 보인다).
+        if (pose != Pose.Vibe)
+            foreach (var (x, y) in new[] { (0, 11), (1, 11), (0, 13), (1, 13) }) Mirror(x, y, ink);
 
         // ---- 몸통 · 목걸이 ----
         var bodySpans = new (int Y, int A, int B)[]
@@ -156,6 +160,12 @@ public static class Mascot
             tailFur = new[] { (17, 21), (18, 21), (19, 20), (20, 20), (21, 21), (20, 22) };
             tailInk = new[] { (17, 22), (18, 22), (19, 21), (22, 21), (21, 22), (19, 19), (20, 19) };
         }
+        else if (pose == Pose.Vibe)
+        {
+            // 신나서 꼿꼿이 선 꼬리 — Alert 와 같다.
+            tailFur = new[] { (17, 21), (18, 20), (19, 19), (20, 18), (20, 16), (20, 14), (19, 13) };
+            tailInk = new[] { (17, 22), (18, 21), (19, 20), (21, 18), (21, 16), (21, 14), (19, 12), (18, 13) };
+        }
         else
         {
             tailFur = new[] { (17, 21), (18, 20), (19, 19), (20, 18), (20, 17), (19, 16) };
@@ -163,6 +173,45 @@ public static class Mascot
         }
         foreach (var (x, y) in tailFur) Put(x, y, fur);
         foreach (var (x, y) in tailInk) Put(x, y, ink);
+
+        // ---- 헤드폰 ---- (Vibe 전용, 맨 나중에 찍어서 귀와 수염 위에 얹는다)
+        if (pose == Pose.Vibe)
+        {
+            var shell = Res("MuteBrush");
+            var pad   = Res("PinkBrush");
+
+            // 귀마개 — 볼 옆을 감싸는 3×5 쉘에 분홍 패드
+            foreach (var y in new[] { 8, 9, 10, 11, 12 })
+                for (int x = 0; x <= 2; x++) Mirror(x, y, shell);
+            foreach (var y in new[] { 9, 10, 11 })
+                for (int x = 1; x <= 2; x++) Mirror(x, y, pad);
+
+            // 밴드 — 귀 바깥을 타고 올라가 귀 사이를 가로지른다
+            foreach (var (x, y) in new[] { (2, 7), (2, 6), (2, 5), (3, 4), (3, 3), (4, 2), (5, 1), (6, 1) })
+                Mirror(x, y, shell);
+            for (int x = 7; x <= 14; x++) Put(x, 0, shell);
+        }
+    }
+
+    /// <summary>
+    /// 8비트 음표 하나 — 4칸 × 4칸. 미니 모드에서 음악감상 중인 코코아 주변에 뿅뿅 떠오른다.
+    /// </summary>
+    public static void DrawNote(Canvas canvas, int cell, Brush color)
+    {
+        canvas.Children.Clear();
+        foreach (var (x, y) in new[] { (2, 0), (3, 0), (2, 1), (2, 2), (1, 3), (2, 3) })
+        {
+            var r = new WpfRectangle
+            {
+                Width = cell,
+                Height = cell,
+                Fill = color,
+                SnapsToDevicePixels = true,
+            };
+            Canvas.SetLeft(r, x * cell);
+            Canvas.SetTop(r, y * cell);
+            canvas.Children.Add(r);
+        }
     }
 
     /// <summary>스위치 얼굴 스프라이트의 격자 크기.</summary>
@@ -172,7 +221,8 @@ public static class Mascot
     /// <summary>
     /// 냥 소리 스위치에 쓰는 작은 얼굴 — 16칸 × 9칸. 깨어 있으면 앰버 얼굴에 음표, 잠들면 회색 얼굴에 z.
     /// </summary>
-    public static void DrawFace(Canvas canvas, int cell, bool awake)
+    /// <param name="mark">음표/z 표시까지 그릴지 — 타이틀바의 미니 모드 버튼은 얼굴만 쓴다.</param>
+    public static void DrawFace(Canvas canvas, int cell, bool awake, bool mark = true)
     {
         canvas.Children.Clear();
 
@@ -218,6 +268,8 @@ public static class Mascot
         // 코와 입
         Put(5, 5, ink);
         Put(4, 6, ink); Put(6, 6, ink);
+
+        if (!mark) return;
 
         // 오른쪽 위 — 음표 또는 z (12~15열, 얼굴과 한 칸 띄운다)
         if (awake)

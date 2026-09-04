@@ -401,6 +401,14 @@
                                      Content="KOR" Checked="LangToggle_Checked"/>
                         <RadioButton x:Name="EnToggle" Style="{StaticResource LangToggle}" GroupName="Lang"
                                      Content="EN" Checked="LangToggle_Checked" Margin="2,0,9,0"/>
+                        <!-- 미니 모드 — 누르면 창이 사라지고 작은 오버레이로 변신한다 -->
+                        <Button x:Name="MiniButton" Style="{StaticResource TitleBarButton}"
+                                Width="30"
+                                Click="MiniMode_Click"
+                                ToolTip="{DynamicResource L_MiniHint}"
+                                Margin="0,0,4,0">
+                            <Canvas x:Name="MiniFace" Width="22" Height="18"/>
+                        </Button>
                         <Button Style="{StaticResource TitleBarButton}" Content="_" Click="Minimize_Click" Margin="0,0,4,0"/>
                         <Button Style="{StaticResource TitleBarButton}" Content="▢" Click="Maximize_Click" Margin="0,0,4,0"/>
                         <Button Style="{StaticResource TitleCloseButton}" Content="✕" Click="Close_Click"/>

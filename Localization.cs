@@ -82,6 +82,11 @@ public static class L10n
                                "The countdown is silent — click to let Cocoa meow"),
         ["SoundNoneHint"]   = ("카운트다운이 0이면 냥 소리를 낼 자리가 없어요",
                                "No countdown, no meow — set a countdown first"),
+        ["MiniHint"]        = ("미니 모드로 변신 — 작은 녹음기가 화면 위에 떠 있어요",
+                               "Shrink to mini mode — a tiny recorder floats on top"),
+        ["BackHint"]        = ("스튜디오로 돌아가기", "Back to the studio"),
+        ["MiniStopHint"]    = ("누르면 녹음을 마쳐요", "Click to finish recording"),
+        ["MiniCancelHint"]  = ("누르면 카운트다운을 취소해요", "Click to cancel the countdown"),
         ["ShortcutHint"]    = ("SPACE 시작/정지 · P 일시정지 · CTRL+O 폴더",
                                "SPACE start/stop · P pause · CTRL+O folder"),
 

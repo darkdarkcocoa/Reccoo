@@ -1,0 +1,175 @@
+﻿<Window x:Class="CocoaRecorder.OverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Cocoa Recorder"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="True"
+        ResizeMode="NoResize"
+        SizeToContent="WidthAndHeight"
+        UseLayoutRounding="True">
+
+    <!-- 미니 모드 — 본창이 숨은 동안 화면 위에 떠 있는 손바닥만 한 녹음기.
+         평소에는 코코아와 녹음 버튼, 녹음이 시작되면 코코아가 헤드폰을 끼고
+         고개를 까딱이며 소리를 담고, 주변에 음표가 뿅뿅 떠오른다. -->
+    <Window.Resources>
+        <!-- 컴팩트한 트랜스포트 버튼 — 상태에 따라 코드가 색을 갈아입힌다 -->
+        <Style x:Key="MiniAction" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PinkBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource NightBrush}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource PixelFocusVisual}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.7"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid x:Name="Root" RenderTransformOrigin="0.5,0.5" Width="384" Height="256">
+        <Grid.RenderTransform>
+            <ScaleTransform x:Name="RootScale" ScaleX="1" ScaleY="1"/>
+        </Grid.RenderTransform>
+
+        <!-- 카드 전체 — image-2 로 뽑은 고양이 귀 픽셀 프레임 + 그 속의 컨트롤 -->
+        <Grid x:Name="CardWrap" RenderTransformOrigin="0.5,0.5" MouseLeftButtonDown="Drag_MouseDown" Background="Transparent">
+            <Grid.RenderTransform>
+                <ScaleTransform x:Name="CardScale"/>
+            </Grid.RenderTransform>
+
+            <!-- 1536×1024 원본을 정확히 1/4 로 — 정수 배라 픽셀이 뭉개지지 않는다 -->
+            <Image Source="pack://application:,,,/Art/overlay-frame.png"
+                   Stretch="Fill"
+                   RenderOptions.BitmapScalingMode="NearestNeighbor"
+                   SnapsToDevicePixels="True"/>
+
+            <!-- 테두리의 십자별 — 원본에서 지우고 코드가 다시 그려 각자 깜빡인다 -->
+            <Canvas x:Name="StarLayer" IsHitTestVisible="False"/>
+
+            <!-- 프레임의 민무늬 안쪽 영역(1/4 축척 36,52 ~ 331,227)에 맞춘 여백 -->
+            <Grid Margin="36,52,53,29">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- 코코아 — image-2 픽셀 스프라이트. 상태마다 포즈 그림이 바뀐다.
+                     발치 줄까지 포함한 안쪽 전체 높이에 대해 가운데 정렬한다. -->
+                <Grid Width="126" Height="138" Grid.RowSpan="2" VerticalAlignment="Center">
+                    <Image x:Name="CatImage" Height="122"
+                           HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           RenderTransformOrigin="0.5,0.85">
+                        <Image.RenderTransform>
+                            <RotateTransform x:Name="CatTilt"/>
+                        </Image.RenderTransform>
+                    </Image>
+                    <Canvas x:Name="NoteLayer" IsHitTestVisible="False">
+                        <Canvas x:Name="Note1" Width="12" Height="12" Canvas.Left="4"   Canvas.Top="64" Opacity="0"/>
+                        <Canvas x:Name="Note2" Width="12" Height="12" Canvas.Left="106" Canvas.Top="52" Opacity="0"/>
+                        <Canvas x:Name="Note3" Width="12" Height="12" Canvas.Left="56"  Canvas.Top="26" Opacity="0"/>
+                    </Canvas>
+                </Grid>
+
+                <!-- 오른쪽 — 버튼이 위, 상태 표시가 아래. 발치 줄까지 포함해 세로 가운데. -->
+                <StackPanel Grid.Column="2" Grid.RowSpan="2" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Button x:Name="ActionButton"
+                            Style="{StaticResource MiniAction}"
+                            Width="128" Height="38"
+                            Click="Action_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <Rectangle x:Name="ActionGlyph" Width="10" Height="10"
+                                       Fill="{StaticResource NightBrush}" RadiusX="5" RadiusY="5"
+                                       Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="ActionText" Text="REC"
+                                       FontFamily="{StaticResource DisplayFont}" FontSize="15"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- 대기: 카운트다운 스테퍼 -->
+                    <StackPanel x:Name="StepperRow" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,14,0,0">
+                        <Button x:Name="OverlayDown" Style="{StaticResource StepButton}" Click="Down_Click" VerticalAlignment="Center">
+                            <Rectangle Width="9" Height="3" Fill="{StaticResource LilacBrush}" SnapsToDevicePixels="True"/>
+                        </Button>
+                        <TextBlock x:Name="OverlaySeconds" Text="3s"
+                                   FontFamily="{StaticResource DisplayFont}" FontSize="16"
+                                   Foreground="{StaticResource AmberBrush}"
+                                   Width="48" TextAlignment="Center" VerticalAlignment="Center"/>
+                        <Button x:Name="OverlayUp" Style="{StaticResource StepButton}" Click="Up_Click" VerticalAlignment="Center">
+                            <Grid Width="9" Height="9">
+                                <Rectangle Width="9" Height="3" Fill="{StaticResource LilacBrush}" VerticalAlignment="Center" SnapsToDevicePixels="True"/>
+                                <Rectangle Width="3" Height="9" Fill="{StaticResource LilacBrush}" HorizontalAlignment="Center" SnapsToDevicePixels="True"/>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- 카운트다운: 큰 숫자가 틱마다 통 튄다 -->
+                    <TextBlock x:Name="CountDigit" Text="3" Visibility="Collapsed"
+                               FontFamily="{StaticResource DisplayFont}" FontSize="44"
+                               Foreground="{StaticResource AmberBrush}"
+                               TextAlignment="Center" HorizontalAlignment="Center" Margin="0,8,0,0"
+                               RenderTransformOrigin="0.5,0.5">
+                        <TextBlock.RenderTransform>
+                            <ScaleTransform x:Name="DigitScale"/>
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
+
+                    <!-- 녹음·일시정지: 점 + 상태 + 경과 시간 -->
+                    <StackPanel x:Name="LiveRow" Visibility="Collapsed" HorizontalAlignment="Center" Margin="0,12,0,0">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Rectangle x:Name="RecDot" Width="9" Height="9"
+                                       Fill="{StaticResource PinkBrush}" Margin="0,0,7,0"
+                                       VerticalAlignment="Center" SnapsToDevicePixels="True"/>
+                            <TextBlock x:Name="RecLabel" Text="REC"
+                                       FontFamily="{StaticResource DisplayFont}" FontSize="14"
+                                       Foreground="{StaticResource PinkBrush}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock x:Name="LiveElapsed" Text="00:00"
+                                   FontFamily="{StaticResource DisplayFont}" FontSize="19"
+                                   Foreground="{StaticResource CreamBrush}"
+                                   HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- 발치 — 단축키 안내는 왼쪽, 스튜디오 복귀는 오른쪽 -->
+                <Grid Grid.Row="1" Grid.ColumnSpan="3" Margin="2,6,0,0">
+                    <TextBlock x:Name="HotkeyHint" Text="F3"
+                               FontFamily="{StaticResource DisplayFont}" FontSize="11"
+                               Foreground="{StaticResource MuteBrush}" VerticalAlignment="Center"/>
+                    <Button Style="{StaticResource TitleBarButton}" Content="⤢"
+                            Click="Restore_Click"
+                            ToolTip="{DynamicResource L_BackHint}"
+                            HorizontalAlignment="Right"/>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

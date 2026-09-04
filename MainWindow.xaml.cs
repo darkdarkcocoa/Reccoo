@@ -123,6 +123,8 @@ public partial class MainWindow : Window
         PreviewKeyDown += OnPreviewKeyDown;
         Closed += (_, _) =>
         {
+            _overlay?.CloseSilently();
+            _overlay = null;
             L10n.LanguageChanged -= OnLanguageChanged;
             _waveformTimer.Stop();
             _uiTimer.Stop();
@@ -336,6 +338,7 @@ public partial class MainWindow : Window
             MascotSpeech.Text = $"{L10n.T("MsgDeviceLoadFail")}\n{ex.Message}";
         }
 
+        Mascot.DrawFace(MiniFace, 2, awake: true, mark: false);
         ShowTab(TabRecord);
         UpdateButton.ToolTip = string.Format(L10n.T("UpdateCurrent"), AppVersion);
         CheckForUpdate();
@@ -343,6 +346,7 @@ public partial class MainWindow : Window
         UpdateFormatInfo();
         RefreshRecordings();
         _waveformTimer.Start();
+        if (_preferences.MiniMode) EnterMiniMode();
     }
 
     // =================== Title bar ===================
@@ -657,6 +661,9 @@ public partial class MainWindow : Window
         foreach (var preset in new[] { CountdownOff, Countdown3, Countdown5, Countdown10 })
             preset.IsEnabled = editable;
 
+        _overlay?.SetCountdown(CountdownValueText.Text, editable,
+            canGoDown: seconds > 0, canGoUp: seconds < AppPreferences.MaxCountdownSeconds);
+
         // 냥 소리 — 카운트다운이 0이면 낼 자리가 없고, 클립을 못 읽었으면 켤 수도 없다.
         bool sound = _preferences.CountdownSound && _chime.IsAvailable;
         foreach (var (toggle, face) in new[]
@@ -732,6 +739,9 @@ public partial class MainWindow : Window
     /// <summary>카운트다운의 냥 소리. 리소스가 없거나 코덱이 없으면 조용한 채로 만들어진다.</summary>
     private readonly CountdownChime _chime = new();
 
+    /// <summary>미니 모드 창. null 이면 본창이 보이는 보통 상태다.</summary>
+    private OverlayWindow? _overlay;
+
     private void StartRecording()
     {
         if (DeviceCombo.SelectedItem is null)
@@ -786,6 +796,7 @@ public partial class MainWindow : Window
     private void ApplyCountdownVisual()
     {
         CountdownDigit.Text = _countdownValue.ToString();
+        _overlay?.ShowCountdown(_countdownValue);
         MascotSpeech.Text = _countdownValue switch
         {
             3 => L10n.T("Count3"),
@@ -868,6 +879,88 @@ public partial class MainWindow : Window
     /// 상태 하나가 히어로 색, 트랜스포트 두 버튼, 잠기는 컨트롤을 한꺼번에 결정한다.
     /// 시안의 3a~3d 프레임이 그대로 여기에 대응한다.
     /// </summary>
+    // ===================================================================
+    // 미니 모드 — 본창이 숨고 작은 오버레이가 앱이 된다. 상태의 주인은 여전히 이 창이라,
+    // 오버레이의 버튼은 아래 Mini* 메서드로 들어오고, 상태 변화는 UpdateTransport 가 되밀어 준다.
+    // ===================================================================
+    private void MiniMode_Click(object sender, RoutedEventArgs e) => EnterMiniMode();
+
+    private void EnterMiniMode()
+    {
+        if (_overlay != null) return;
+        _overlay = new OverlayWindow(this);
+        if (_preferences.OverlayLeft is double x && _preferences.OverlayTop is double y)
+        {
+            // 모니터 구성이 바뀌었을 수 있다 — 화면 밖에 두면 되찾을 방법이 없으니 안으로 끌어온다.
+            _overlay.Left = Math.Clamp(x, SystemParameters.VirtualScreenLeft,
+                SystemParameters.VirtualScreenLeft + SystemParameters.VirtualScreenWidth - 200);
+            _overlay.Top = Math.Clamp(y, SystemParameters.VirtualScreenTop,
+                SystemParameters.VirtualScreenTop + SystemParameters.VirtualScreenHeight - 100);
+        }
+        else
+        {
+            // 처음에는 본창 오른쪽 위 — 방금까지 보던 달 근처라 눈이 따라간다.
+            _overlay.Left = Left + Width - 320;
+            _overlay.Top = Top + 52;
+        }
+        _overlay.Show();
+        Hide();
+        _preferences.MiniMode = true;
+        _preferences.Save();
+        UpdateTransport();
+        // 카운트다운 도중에 변신했으면 다음 틱까지 옛 숫자가 보이지 않게 지금 값을 바로 밀어 준다.
+        if (State == Transport.Countdown) _overlay.ShowCountdown(_countdownValue);
+    }
+
+    internal void ExitMiniMode()
+    {
+        if (_overlay is not { } overlay) return;
+        _overlay = null;
+        _preferences.OverlayLeft = overlay.Left;
+        _preferences.OverlayTop = overlay.Top;
+        _preferences.MiniMode = false;
+        _preferences.Save();
+        overlay.CloseSilently();
+        Show();
+        Activate();
+    }
+
+    /// <summary>오버레이가 복귀 아닌 방법(Alt+F4 등)으로 닫히면 앱도 함께 끝난다 — 오버레이가 곧 앱이다.</summary>
+    internal void OnOverlayClosedByUser()
+    {
+        if (_overlay is not { } overlay) return;
+        _overlay = null;
+        _preferences.OverlayLeft = overlay.Left;
+        _preferences.OverlayTop = overlay.Top;
+        _preferences.Save();
+        // 녹음을 마무리하는 동안 창이 하나도 없으면 앱이 몰래 살아 있는 것처럼 보인다 — 본창을 보여 주고 닫는다.
+        if (_recorder.IsRecording) Show();
+        Close();
+    }
+
+    /// <summary>Space 와 같은 뜻 — 대기면 시작, 카운트다운이면 취소, 녹음·일시정지면 정지.</summary>
+    internal void MiniPrimary()
+    {
+        switch (State)
+        {
+            case Transport.Countdown: CancelCountdown(); break;
+            case Transport.Idle: StartRecording(); break;
+            default: StopRecording(); break;
+        }
+    }
+
+    internal void MiniCancel()
+    {
+        if (State == Transport.Countdown) CancelCountdown();
+    }
+
+    internal void MiniPause()
+    {
+        if (_recorder.IsRecording) TogglePause();
+    }
+
+    internal void MiniStepCountdown(int delta) => StepCountdown(delta);
+
     private void UpdateTransport()
     {
         var state = State;
@@ -963,6 +1056,14 @@ public partial class MainWindow : Window
 
         UpdateStatusDot();
         UpdateSizeLabel();
+
+        _overlay?.SyncState(state switch
+        {
+            Transport.Countdown => MascotMood.Countdown,
+            Transport.Recording => MascotMood.Recording,
+            Transport.Paused    => MascotMood.Paused,
+            _                   => MascotMood.Idle,
+        });
     }
 
     /// <summary>
@@ -1030,6 +1131,7 @@ public partial class MainWindow : Window
     private void UpdateTimerLabels()
     {
         var ts = _recorder.Elapsed;
+        _overlay?.SetElapsed(ts);
         TimerMin.Text = ((int)ts.TotalMinutes).ToString("D2");
         TimerSec.Text = ts.Seconds.ToString("D2");
         TimerCs.Text = "." + (ts.Milliseconds / 10).ToString("D2");
@@ -1581,6 +1683,13 @@ public partial class MainWindow : Window
 
         /// <summary>마지막으로 확인한 릴리스 태그. 더 새 것이 올라오면 알림이 다시 켜진다.</summary>
         public string? SeenReleaseTag { get; set; }
+
+        /// <summary>미니 모드로 닫았으면 다음에도 미니 모드로 연다.</summary>
+        public bool MiniMode { get; set; }
+
+        /// <summary>오버레이를 마지막으로 두었던 자리.</summary>
+        public double? OverlayLeft { get; set; }
+        public double? OverlayTop { get; set; }
 
         public AppPreferences()
         {
