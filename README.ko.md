@@ -16,6 +16,10 @@
 
 ![코코아 레코더 — 도움말 투어](assets/screenshot-help-ko.png)
 
+<sub>미니 모드 — 타이틀바의 고양이 얼굴 버튼을 누르면 스튜디오가 화면 위에 떠 있는 작은 카드로 줄어듭니다. 아무 데나 끌어다 두고 그 자리에서 카운트다운·녹음을 하거나, 다른 창에서 `F3`을 누르세요. 녹음 중에는 코코아가 헤드폰을 끼고 고개를 까딱입니다.</sub>
+
+<img src="assets/screenshot-mini.png" width="32%" alt="미니 모드 — 대기"> <img src="assets/screenshot-mini-count.png" width="32%" alt="미니 모드 — 카운트다운"> <img src="assets/screenshot-mini-rec.png" width="32%" alt="미니 모드 — 녹음, 헤드폰 낀 코코아">
+
 ![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square)
 ![WPF](https://img.shields.io/badge/UI-WPF-1f6feb?style=flat-square)
 ![Windows](https://img.shields.io/badge/OS-Windows-0078D4?style=flat-square)

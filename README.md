@@ -13,6 +13,10 @@ Cocoa Recorder (formerly Reccoo) is a small recorder that captures whatever your
 
 ![Cocoa Recorder — the guided tour](assets/screenshot-help.png)
 
+<sub>Mini mode — the cat-face button in the title bar shrinks the studio into a tiny always-on-top card. Drag it anywhere, count down and record right there, or press `F3` from any window. While recording, Cocoa puts on her headphones and bobs along.</sub>
+
+<img src="assets/screenshot-mini.png" width="32%" alt="Mini mode — standing by"> <img src="assets/screenshot-mini-count.png" width="32%" alt="Mini mode — counting down"> <img src="assets/screenshot-mini-rec.png" width="32%" alt="Mini mode — recording, Cocoa in headphones">
+
 ![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square)
 ![WPF](https://img.shields.io/badge/UI-WPF-1f6feb?style=flat-square)
 ![Windows](https://img.shields.io/badge/OS-Windows-0078D4?style=flat-square)
